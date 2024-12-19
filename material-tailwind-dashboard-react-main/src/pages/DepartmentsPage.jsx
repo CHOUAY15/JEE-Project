@@ -4,13 +4,13 @@ import {
   useGetDepartmentsQuery, 
   useCreateDepartmentMutation,
   useUpdateDepartmentMutation,
-  useDeleteDepartmentMutation 
+  useDeleteDepartmentMutation
 } from '../features/department/departmentSlice';
 import { DepartmentManager } from '../components/department/DepartmentManager';
 
 const DepartmentsPage = () => {
   const navigate = useNavigate();
-  const { data: departments = [], isLoading } = useGetDepartmentsQuery();
+  const { data: departments = [], isLoading, refetch } = useGetDepartmentsQuery(); // Utilisation de refetch
   const [createDepartment] = useCreateDepartmentMutation();
   const [updateDepartment] = useUpdateDepartmentMutation();
   const [deleteDepartment] = useDeleteDepartmentMutation();
@@ -38,10 +38,9 @@ const DepartmentsPage = () => {
     }
   };
 
-  // Dans DepartmentsPage.jsx
   const handleDepartmentClick = (dept) => {
     console.log("Département cliqué:", dept.id);
-    navigate(`/dashboard/departements/${dept.id}/teachers`); // Utiliser l'ID directement
+    navigate(`/dashboard/departements/${dept.id}/teachers`);
   };
 
   const handleEdit = (department) => {
@@ -63,6 +62,37 @@ const DepartmentsPage = () => {
     setActiveDropdown((prev) => (prev === id ? null : id));
   };
 
+  // Handle CSV file upload and import
+  const handleCSVUpload = (event) => {
+    const file = event.target.files[0];
+    if (file && file.type === 'text/csv') {
+      const formData = new FormData();
+      formData.append('file', file); // Ajoute le fichier CSV dans FormData
+
+      // Envoi de la requête POST avec FormData
+      fetch('http://localhost:8888/SERVICE-DEPARTEMENT/departements/upload-csv', {
+        method: 'POST',
+        body: formData, // Corps de la requête contenant le fichier
+      })
+        .then((response) => {
+          if (response.ok) {
+            alert('Départements importés avec succès');
+            refetch(); // Rafraîchit les départements après l'importation
+          } else {
+            return response.json().then((errorData) => {
+              alert('Erreur lors de l’importation du fichier CSV: ' + errorData.message);
+            });
+          }
+        })
+        .catch((error) => {
+          console.error('Failed to import CSV:', error);
+          alert('Erreur lors de l’importation du fichier CSV');
+        });
+    } else {
+      alert('Veuillez sélectionner un fichier CSV');
+    }
+  };
+
   if (isLoading) {
     return <div className="p-4">Chargement...</div>;
   }
@@ -71,17 +101,37 @@ const DepartmentsPage = () => {
     <div className="space-y-6 p-4">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Départements ({departments.length})</h1>
-        <button
-          onClick={() => {
-            setIsModalOpen(true);
-            setSelectedDepartment(null);
-          }}
-          className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800"
-        >
-          + Ajouter un nouveau département
-        </button>
+  
+        {/* Conteneur flex pour les deux boutons */}
+        <div className="flex gap-4">
+          <button
+            onClick={() => {
+              setIsModalOpen(true);
+              setSelectedDepartment(null);
+            }}
+            className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800"
+          >
+            + Ajouter un nouveau département
+          </button>
+  
+          <div>
+            {/* Import CSV Button */}
+            <input 
+              type="file" 
+              accept=".csv"
+              onChange={handleCSVUpload}
+              className="file-input hidden" // Cache le champ input
+            />
+            <button
+              onClick={() => document.querySelector('input[type="file"]').click()}
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-400"
+            >
+              Importer un fichier CSV
+            </button>
+          </div>
+        </div>
       </div>
-
+  
       <div className="space-y-2 border rounded p-2">
         {departments.map((dept) => (
           <div
@@ -94,7 +144,7 @@ const DepartmentsPage = () => {
             >
               {dept.nom}
             </span>
-
+  
             <div className="relative">
               <button
                 onClick={() => toggleDropdown(dept.id)}
@@ -122,7 +172,7 @@ const DepartmentsPage = () => {
           </div>
         ))}
       </div>
-
+  
       <DepartmentManager
         isOpen={isModalOpen}
         onClose={() => {
@@ -134,6 +184,7 @@ const DepartmentsPage = () => {
       />
     </div>
   );
+  
 };
 
 export default DepartmentsPage;

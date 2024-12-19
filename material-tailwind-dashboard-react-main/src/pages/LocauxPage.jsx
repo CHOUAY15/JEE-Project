@@ -145,64 +145,64 @@ const LocauxPage = () => {
       </div>
 
       {showDialog && (
-  <div className="fixed inset-0 z-[9999] flex items-center justify-center">
-    <div className="fixed inset-0 bg-gray-800 bg-opacity-50 z-[9999]"></div>
-    <div className="relative z-[10000] bg-white p-6 rounded shadow-lg w-96"> {/* z-index plus élevé que l'overlay */}
-      <h2 className="text-xl font-bold mb-4">
-        {formData.id ? 'Modifier le local' : 'Ajouter un local'}
-      </h2>
-      <div className="space-y-4">
-        <input
-          type="text"
-          placeholder="Nom"
-          value={formData.nom}
-          onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
-          className="w-full p-2 border rounded"
-        />
-        <input
-          type="number"
-          placeholder="Capacité"
-          value={formData.capacite}
-          onChange={(e) => setFormData({ ...formData, capacite: Number(e.target.value) })}
-          className="w-full p-2 border rounded"
-        />
-        <select
-          value={formData.type}
-          onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-          className="w-full p-2 border rounded"
-        >
-          <option value="salle">Salle</option>
-          <option value="amphi">Amphi</option>
-        </select>
-        <div className="flex items-center">
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={formData.estDisponible}
-              onChange={(e) => setFormData({ ...formData, estDisponible: e.target.checked })}
-              className="mr-2"
-            />
-            Disponible
-          </label>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center">
+          <div className="fixed inset-0 bg-gray-800 bg-opacity-50 z-[9999]"></div>
+          <div className="relative z-[10000] bg-white p-6 rounded shadow-lg w-96">
+            <h2 className="text-xl font-bold mb-4">
+              {formData.id ? 'Modifier le local' : 'Ajouter un local'}
+            </h2>
+            <div className="space-y-4">
+              <input
+                type="text"
+                placeholder="Nom"
+                value={formData.nom}
+                onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
+                className="w-full p-2 border rounded"
+              />
+              <input
+                type="number"
+                placeholder="Capacité"
+                value={formData.capacite}
+                onChange={(e) => setFormData({ ...formData, capacite: Number(e.target.value) })}
+                className="w-full p-2 border rounded"
+              />
+              <select
+                value={formData.type}
+                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                className="w-full p-2 border rounded"
+              >
+                <option value="salle">Salle</option>
+                <option value="amphi">Amphi</option>
+              </select>
+              <div className="flex items-center">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={formData.estDisponible}
+                    onChange={(e) => setFormData({ ...formData, estDisponible: e.target.checked })}
+                    className="mr-2"
+                  />
+                  Disponible
+                </label>
+              </div>
+            </div>
+            <div className="flex justify-end mt-6 space-x-2">
+              <button
+                className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400"
+                onClick={() => setShowDialog(false)}
+              >
+                Annuler
+              </button>
+              <button
+                className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800"
+                onClick={handleAddOrUpdate}
+              >
+                Enregistrer
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
-      <div className="flex justify-end mt-6 space-x-2">
-        <button
-          className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400"
-          onClick={() => setShowDialog(false)}
-        >
-          Annuler
-        </button>
-        <button
-          className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800"
-          onClick={handleAddOrUpdate}
-        >
-          Enregistrer
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+      )}
     </div>
   );
 };

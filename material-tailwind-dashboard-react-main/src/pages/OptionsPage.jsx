@@ -1,27 +1,31 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   useGetOptionsQuery,
   useCreateOptionMutation,
   useUpdateOptionMutation,
-  useDeleteOptionMutation
+  useDeleteOptionMutation,
+  useImportOptionsMutation
 } from "../features/options/optionSlice";
 import OptionsTable from "../components/option/OptionsTable";
 import AddModal from "../components/option/AddModal";
 import EditModal from "../components/option/EditModal";
 import DeleteModal from "../components/option/DeleteModal";
+import ImportCSVModal from "./ImportCSVModal";
 
 export default function OptionsPage() {
   const navigate = useNavigate();
-  const { data: options = [], isLoading } = useGetOptionsQuery();
+  const { data: options = [], isLoading, refetch } = useGetOptionsQuery();
   const [createOption] = useCreateOptionMutation();
   const [updateOption] = useUpdateOptionMutation();
   const [deleteOption] = useDeleteOptionMutation();
-console.log("hhhan",options)
+  const [importOptions] = useImportOptionsMutation(); // mutation for importing options
+
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [optionToDelete, setOptionToDelete] = useState(null);
   const [newOption, setNewOption] = useState({
     nomOption: "",
@@ -38,17 +42,28 @@ console.log("hhhan",options)
     modules: []
   });
 
-  const filteredOptions = options.filter((option) =>
-    [option.nomOption, option.niveauAnnee, option.nombreEtudiant]
-      .map((field) => field.toString().toLowerCase())
-      .some((field) => field.includes(searchTerm.toLowerCase()))
-  );
+  const [filteredOptions, setFilteredOptions] = useState([]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const filtered = options.filter((option) =>
+        [option.nomOption, option.niveauAnnee, option.nombreEtudiant]
+          .map((field) => field.toString().toLowerCase())
+          .some((field) => field.includes(searchTerm.toLowerCase()))
+      );
+      setFilteredOptions(filtered);
+    }, 2000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [options, searchTerm]);
 
   const handleAddOption = async () => {
     try {
       await createOption(newOption).unwrap();
       setIsAddModalOpen(false);
-      setNewOption({ nomOption: "", niveauAnnee: "", nombreEtudiant: 0 });
+      setNewOption({ nomOption: "", niveauAnnee: "", nombreEtudiant: 0, modules: [] });
     } catch (error) {
       console.error("Failed to create option:", error);
     }
@@ -73,7 +88,7 @@ console.log("hhhan",options)
       }).unwrap();
       
       setIsEditModalOpen(false);
-      setEditOption1({ id: "", nomOption: "", niveauAnnee: "", nombreEtudiant: 0 });
+      setEditOption1({ id: "", nomOption: "", niveauAnnee: "", nombreEtudiant: 0, modules: [] });
     } catch (error) {
       console.error("Failed to update option:", error);
     }
@@ -89,18 +104,35 @@ console.log("hhhan",options)
     }
   };
 
+  const handleImportOptions = async (options) => {
+    try {
+      await importOptions(options); // Use mutation for importing options
+      refetch(); // Refetch the data after import
+    } catch (error) {
+      console.error('Import error:', error);
+    }
+  };
+
   if (isLoading) return <div>Chargement...</div>;
 
   return (
     <div className="bg-gray-100 p-4">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-bold">Options ({filteredOptions.length})</h1>
-        <button
-          className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
-          onClick={() => setIsAddModalOpen(true)}
-        >
-          + Ajouter une nouvelle option
-        </button>
+        <div className="flex gap-4">
+          <button
+            className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700"
+            onClick={() => setIsImportModalOpen(true)}
+          >
+            Importer CSV
+          </button>
+          <button
+            className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
+            onClick={() => setIsAddModalOpen(true)}
+          >
+            + Ajouter une nouvelle option
+          </button>
+        </div>
       </div>
 
       <div className="mb-4">
@@ -169,6 +201,18 @@ console.log("hhhan",options)
             <DeleteModal
               onClose={() => setIsDeleteModalOpen(false)}
               onDelete={handleDeleteOption}
+            />
+          </div>
+        </div>
+      )}
+
+      {isImportModalOpen && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center">
+          <div className="fixed inset-0 bg-black bg-opacity-50"></div>
+          <div className="relative z-[10000] bg-white rounded-lg shadow-xl">
+            <ImportCSVModal
+              onClose={() => setIsImportModalOpen(false)}
+              onImport={handleImportOptions}
             />
           </div>
         </div>

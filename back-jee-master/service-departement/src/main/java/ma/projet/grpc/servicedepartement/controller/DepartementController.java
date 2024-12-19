@@ -78,6 +78,16 @@ public class DepartementController {
             return ResponseEntity.status(500).body("Erreur lors de la lecture du fichier CSV.");
         }
     }
+    @PostMapping("/SaveAll")
+    public ResponseEntity<String> importDepartements(@RequestBody List<Departement> departements) {
+        try {
+            departementService.saveDepartements(departements);  // Méthode pour enregistrer les départements
+            return ResponseEntity.ok("Départements importés avec succès.");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Erreur lors de l'importation des départements.");
+        }
+    }
+
 
 
 }

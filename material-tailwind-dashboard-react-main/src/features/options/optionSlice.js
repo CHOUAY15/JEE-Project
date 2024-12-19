@@ -1,4 +1,3 @@
-// src/features/options/optionSlice.js
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
 export const optionApi = createApi({
@@ -11,7 +10,8 @@ export const optionApi = createApi({
   endpoints: (builder) => ({
     getOptions: builder.query({
       query: () => '',
-      providesTags: ['Option']
+      providesTags: ['Option'],
+      pollingInterval: 3000, // Rafraîchissement toutes les 30 secondes (30000 ms)
     }),
     createOption: builder.mutation({
       query: (option) => ({
@@ -35,7 +35,17 @@ export const optionApi = createApi({
         method: 'DELETE'
       }),
       invalidatesTags: ['Option']
-    })
+    }),
+    importOptions: builder.mutation({
+      query: (formData) => {
+        return {
+          url: '/import',
+          method: 'POST',
+          body: formData,
+        };
+      },
+      invalidatesTags: ['Option'],
+    }),
   })
 });
 
@@ -43,5 +53,6 @@ export const {
   useGetOptionsQuery,
   useCreateOptionMutation,
   useUpdateOptionMutation,
-  useDeleteOptionMutation
+  useDeleteOptionMutation,
+  useImportOptionsMutation
 } = optionApi;
