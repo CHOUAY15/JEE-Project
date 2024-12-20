@@ -52,7 +52,7 @@ export default function OptionsPage() {
           .some((field) => field.includes(searchTerm.toLowerCase()))
       );
       setFilteredOptions(filtered);
-    }, 2000);
+    }, 20);
 
     return () => {
       clearInterval(interval);

@@ -10,14 +10,13 @@ import { DepartmentManager } from '../components/department/DepartmentManager';
 
 const DepartmentsPage = () => {
   const navigate = useNavigate();
-  const { data: departments = [], isLoading, refetch } = useGetDepartmentsQuery(); // Utilisation de refetch
+  const { data: departments = [], isLoading, refetch } = useGetDepartmentsQuery();
   const [createDepartment] = useCreateDepartmentMutation();
   const [updateDepartment] = useUpdateDepartmentMutation();
   const [deleteDepartment] = useDeleteDepartmentMutation();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState(null);
-  const [activeDropdown, setActiveDropdown] = useState(null);
 
   const handleSaveDepartment = async (departmentData) => {
     try {
@@ -33,6 +32,7 @@ const DepartmentsPage = () => {
       }
       setIsModalOpen(false);
       setSelectedDepartment(null);
+      refetch(); // Ensure the list is updated after saving
     } catch (error) {
       console.error('Failed to save department:', error);
     }
@@ -46,50 +46,46 @@ const DepartmentsPage = () => {
   const handleEdit = (department) => {
     setSelectedDepartment(department);
     setIsModalOpen(true);
-    setActiveDropdown(null);
   };
 
   const handleDelete = async (departmentId) => {
     try {
       await deleteDepartment(departmentId).unwrap();
-      setActiveDropdown(null);
+      refetch(); // Refresh the list after deletion
     } catch (error) {
       console.error('Failed to delete department:', error);
     }
   };
 
-  const toggleDropdown = (id) => {
-    setActiveDropdown((prev) => (prev === id ? null : id));
-  };
-
-  // Handle CSV file upload and import
   const handleCSVUpload = (event) => {
     const file = event.target.files[0];
     if (file && file.type === 'text/csv') {
       const formData = new FormData();
-      formData.append('file', file); // Ajoute le fichier CSV dans FormData
+      formData.append('file', file);
 
-      // Envoi de la requête POST avec FormData
-      fetch('http://localhost:8888/SERVICE-DEPARTEMENT/departements/upload-csv', {
-        method: 'POST',
-        body: formData, // Corps de la requête contenant le fichier
-      })
-        .then((response) => {
-          if (response.ok) {
-            alert('Départements importés avec succès');
-            refetch(); // Rafraîchit les départements après l'importation
-          } else {
-            return response.json().then((errorData) => {
-              alert('Erreur lors de l’importation du fichier CSV: ' + errorData.message);
-            });
-          }
-        })
-        .catch((error) => {
-          console.error('Failed to import CSV:', error);
-          alert('Erreur lors de l’importation du fichier CSV');
-        });
+      uploadCSV(formData);
     } else {
-      alert('Veuillez sélectionner un fichier CSV');
+      alert('Veuillez sélectionner un fichier CSV valide');
+    }
+  };
+
+  const uploadCSV = async (formData) => {
+    try {
+      const response = await fetch('http://localhost:8888/SERVICE-DEPARTEMENT/departements/upload-csv', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        alert('Départements importés avec succès');
+        refetch();
+      } else {
+        const errorData = await response.json();
+        alert('Erreur lors de l\'importation du fichier CSV: ' + errorData.message);
+      }
+    } catch (error) {
+      console.error('Failed to import CSV:', error);
+      alert('Erreur lors de l\'importation du fichier CSV');
     }
   };
 
@@ -101,8 +97,6 @@ const DepartmentsPage = () => {
     <div className="space-y-6 p-4">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Départements ({departments.length})</h1>
-  
-        {/* Conteneur flex pour les deux boutons */}
         <div className="flex gap-4">
           <button
             onClick={() => {
@@ -113,14 +107,12 @@ const DepartmentsPage = () => {
           >
             + Ajouter un nouveau département
           </button>
-  
           <div>
-            {/* Import CSV Button */}
             <input 
               type="file" 
               accept=".csv"
               onChange={handleCSVUpload}
-              className="file-input hidden" // Cache le champ input
+              className="hidden"
             />
             <button
               onClick={() => document.querySelector('input[type="file"]').click()}
@@ -131,48 +123,38 @@ const DepartmentsPage = () => {
           </div>
         </div>
       </div>
-  
+
       <div className="space-y-2 border rounded p-2">
         {departments.map((dept) => (
           <div
             key={dept.id}
-            className="cursor-pointer hover:bg-gray-100 p-2 flex justify-between items-center"
+            className="p-2 flex justify-between items-center hover:bg-gray-50"
           >
             <span
-              className="text-blue-600 underline"
+              className="text-blue-600 underline cursor-pointer"
               onClick={() => handleDepartmentClick(dept)}
             >
               {dept.nom}
             </span>
-  
-            <div className="relative">
+
+            <div className="flex gap-2">
               <button
-                onClick={() => toggleDropdown(dept.id)}
-                className="px-2 py-1 rounded hover:bg-gray-200"
+                onClick={() => handleEdit(dept)}
+                className="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
               >
-                ...
+                Modifier
               </button>
-              {activeDropdown === dept.id && (
-                <div className="absolute right-0 mt-2 bg-white border shadow rounded z-10">
-                  <button
-                    onClick={() => handleEdit(dept)}
-                    className="block px-4 py-2 hover:bg-gray-100 w-full text-left"
-                  >
-                    Modifier
-                  </button>
-                  <button
-                    onClick={() => handleDelete(dept.id)}
-                    className="block px-4 py-2 hover:bg-gray-100 w-full text-left text-red-600"
-                  >
-                    Supprimer
-                  </button>
-                </div>
-              )}
+              <button
+                onClick={() => handleDelete(dept.id)}
+                className="px-3 py-1 bg-red-100 text-red-600 rounded hover:bg-red-200"
+              >
+                Supprimer
+              </button>
             </div>
           </div>
         ))}
       </div>
-  
+
       <DepartmentManager
         isOpen={isModalOpen}
         onClose={() => {
@@ -184,7 +166,6 @@ const DepartmentsPage = () => {
       />
     </div>
   );
-  
 };
 
 export default DepartmentsPage;

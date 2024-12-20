@@ -4,6 +4,8 @@ import { ExamCalendar } from '../components/exam/ExamCalendar';
 
 const ExamsPage = () => {
   const selectedSession = useSelector((state) => state.exams.selectedSession);
+  const sessionId = selectedSession.sessionId;
+  console.log('id de session' , sessionId)
 
   if (!selectedSession) {
     return (

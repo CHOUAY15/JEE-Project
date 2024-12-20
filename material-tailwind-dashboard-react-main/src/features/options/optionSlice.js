@@ -11,7 +11,7 @@ export const optionApi = createApi({
     getOptions: builder.query({
       query: () => '',
       providesTags: ['Option'],
-      pollingInterval: 3000, // Rafraîchissement toutes les 30 secondes (30000 ms)
+      pollingInterval: 1, // Rafraîchissement toutes les 30 secondes (30000 ms)
     }),
     createOption: builder.mutation({
       query: (option) => ({

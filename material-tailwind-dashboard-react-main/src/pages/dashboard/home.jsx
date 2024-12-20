@@ -2,8 +2,10 @@ import React, { useEffect, useState } from "react";
 import { Typography } from "@material-tailwind/react";
 import { StatisticsChart } from "@/widgets/charts";
 import { ClockIcon } from "@heroicons/react/24/solid";
+
+import { useSelector } from "react-redux";
+
 import {
-  
   Card,
   CardHeader,
   CardBody,
@@ -15,21 +17,22 @@ import { StatisticsCard } from "@/widgets/cards";
 
 import {
   statisticsCardsData,
-  statisticsChartsData,
-  ordersOverviewData,
 } from "@/data";
-import { BuildingOfficeIcon } from "@heroicons/react/24/solid"; // Import icon
 
 export function Home() {
-  const [examCount, setExamCount] = useState(null); // State for exams count
-  const [teacherCount, setTeacherCount] = useState(null); // State for teachers count
-  const [departmentCount, setDepartmentCount] = useState(null); // State for departments count
-
+  const selectedSession = useSelector((state) => state.exams.selectedSession);
+  const sessionId = selectedSession?.sessionId;
+  
+  const [examCount, setExamCount] = useState(null);
+  const [teacherCount, setTeacherCount] = useState(null);
+  const [departmentCount, setDepartmentCount] = useState(null);
   const [departments, setDepartments] = useState([]);
   const [chartData, setChartData] = useState({
     categories: [],
     data: []
   });
+
+  // Fetch department data and chart data
   useEffect(() => {
     const fetchDepartmentData = async () => {
       try {
@@ -37,26 +40,14 @@ export function Home() {
         const data = await response.json();
         setDepartments(data);
 
-        // Préparer les données pour le graphique
+        // Prepare chart data
         const categories = data.map(department => department.nom);
         const dataCounts = data.map(department => department.enseignants.length);
         setChartData({
           categories,
           data: dataCounts
         });
-      } catch (error) {
-        console.error("Error fetching department data:", error);
-      }
-    };
-
-    fetchDepartmentData();
-  }, []);
-  useEffect(() => {
-    const fetchDepartmentData = async () => {
-      try {
-        const response = await fetch("http://localhost:8888/SERVICE-DEPARTEMENT/departements");
-        const data = await response.json();
-        setDepartments(data); // Assuming data is an array of departments with a 'teachers' attribute
+        setDepartmentCount(data.length);
       } catch (error) {
         console.error("Error fetching department data:", error);
       }
@@ -65,43 +56,41 @@ export function Home() {
     fetchDepartmentData();
   }, []);
 
-  // Fetch the number of exams from the API
+  // Fetch exam count filtered by sessionId
   useEffect(() => {
     const fetchExamCount = async () => {
+      if (!sessionId) return;
       try {
         const response = await fetch("http://localhost:8888/SERVICE-EXAMEN/api/examens");
         const data = await response.json();
-        setExamCount(data.length); // Assuming the response contains an array of exams
+        
+        const filteredExams = data.filter((exam) => {
+          console.log(exam); // Log each exam
+          return exam.session.id === sessionId; // Return the filtering condition
+        });
+        
+        setExamCount(filteredExams.length);
       } catch (error) {
         console.error("Error fetching exam data:", error);
       }
     };
 
-    // Fetch the number of teachers from the /enseignants API
+    fetchExamCount();
+  }, [sessionId]);
+
+  // Fetch teacher count
+  useEffect(() => {
     const fetchTeacherCount = async () => {
       try {
         const response = await fetch("http://localhost:8888/SERVICE-DEPARTEMENT/enseignants");
         const data = await response.json();
-        setTeacherCount(data.length); // Assuming the response contains an array of teachers
+        setTeacherCount(data.length);
       } catch (error) {
         console.error("Error fetching teacher data:", error);
       }
     };
 
-    // Fetch the number of departments from the /departements API
-    const fetchDepartmentCount = async () => {
-      try {
-        const response = await fetch("http://localhost:8888/SERVICE-DEPARTEMENT/departements");
-        const data = await response.json();
-        setDepartmentCount(data.length); // Assuming the response contains an array of departments
-      } catch (error) {
-        console.error("Error fetching department data:", error);
-      }
-    };
-
-    fetchExamCount();
     fetchTeacherCount();
-    fetchDepartmentCount();
   }, []);
 
   // Update the cards dynamically based on fetched data
@@ -109,23 +98,24 @@ export function Home() {
     if (card.title === "Exams" && examCount !== null) {
       return {
         ...card,
-        value: examCount.toString(), // Set the value to the fetched exam count
+        value: examCount.toString(),
       };
     }
     if (card.title === "Enseignants" && teacherCount !== null) {
       return {
         ...card,
-        value: teacherCount.toString(), // Set the value to the fetched teacher count
+        value: teacherCount.toString(),
       };
     }
     if (card.title === "Nombre total de départements" && departmentCount !== null) {
       return {
         ...card,
-        value: departmentCount.toString(), // Set the value to the fetched department count
+        value: departmentCount.toString(),
       };
     }
     return card;
   });
+
   const departmentTeacherChart = {
     type: "bar",
     height: 220,
@@ -137,94 +127,53 @@ export function Home() {
     ],
     options: {
       chart: {
-        background: '#f7fafc', // You can set a custom color here
-        toolbar: {
-          show: false,
-        },
+        background: '#f7fafc',
+        toolbar: { show: false },
       },
-      colors: ["#FF6347"], // Change this to your desired color (e.g., red instead of green)
+      colors: ["#FF6347"],
       plotOptions: {
-        bar: {
-          columnWidth: "40%",
-          borderRadius: 8,
-        },
+        bar: { columnWidth: "40%", borderRadius: 8 },
       },
       grid: {
         show: true,
-        borderColor: "#e0e0e0", // Set grid line color
+        borderColor: "#e0e0e0",
         strokeDashArray: 4,
-        xaxis: {
-          lines: {
-            show: true,
-          },
-        },
-        yaxis: {
-          lines: {
-            show: true,
-          },
-        },
+        xaxis: { lines: { show: true } },
+        yaxis: { lines: { show: true } },
       },
       xaxis: {
         categories: chartData.categories,
-        title: {
-          text: "Départements",
-          style: {
-            color: "#757575", // Custom color for the x-axis title
-            fontSize: "14px",
-          },
-        },
-        labels: {
-          style: {
-            colors: "#9e9e9e", // Custom color for the x-axis labels
-          },
-        },
+        title: { text: "Départements", style: { color: "#757575", fontSize: "14px" } },
+        labels: { style: { colors: "#9e9e9e" } },
       },
       yaxis: {
-        title: {
-          text: "Nombre d'enseignants",
-          style: {
-            color: "#757575", // Custom color for the y-axis title
-            fontSize: "14px",
-          },
-        },
-        labels: {
-          style: {
-            colors: "#9e9e9e", // Custom color for the y-axis labels
-          },
-        },
+        title: { text: "Nombre d'enseignants", style: { color: "#757575", fontSize: "14px" } },
+        labels: { style: { colors: "#9e9e9e" } },
       },
       tooltip: {
         enabled: true,
-        theme: "dark", // Tooltip theme (dark or light)
-        y: {
-          formatter: (value) => `${value} enseignants`, // Tooltip formatting
-        },
+        theme: "dark",
+        y: { formatter: (value) => `${value} enseignants` },
       },
       legend: {
         position: "top",
         horizontalAlign: "center",
         floating: true,
         fontSize: "14px",
-        labels: {
-          colors: "#757575", // Custom color for the legend labels
-        },
+        labels: { colors: "#757575" },
       },
     },
   };
-  
 
   return (
     <div className="mt-12">
-      {/* All statistical cards */}
       <div className="mb-12 grid gap-y-10 gap-x-6 md:grid-cols-2 xl:grid-cols-4">
         {updatedStatisticsCardsData.map(({ icon, title, footer, ...rest }) => (
           <StatisticsCard
             key={title}
             {...rest}
             title={title}
-            icon={React.createElement(icon, {
-              className: "w-6 h-6 text-white",
-            })}
+            icon={React.createElement(icon, { className: "w-6 h-6 text-white" })}
             footer={
               <Typography className="font-normal text-blue-gray-600">
                 <strong className={footer.color}>{footer.value}</strong>
@@ -235,10 +184,6 @@ export function Home() {
         ))}
       </div>
 
-  
-
-      {/* Two statistical charts and Orders Overview */}
-      
       <div className="mb-6 grid grid-cols-1 gap-y-12 gap-x-6 md:grid-cols-1">
         <StatisticsChart
           key="Department Teachers Count"
@@ -252,7 +197,6 @@ export function Home() {
           }
         />
       </div>
-
     </div>
   );
 }
