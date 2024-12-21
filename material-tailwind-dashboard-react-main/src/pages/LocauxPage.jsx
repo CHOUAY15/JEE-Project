@@ -6,14 +6,6 @@ import {
   useDeleteLocalMutation
 } from '../features/local/localSlice';
 import Papa from 'papaparse';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogContent,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 const LocauxPage = () => {
   const { data: locaux = [], isLoading, refetch } = useGetLocauxQuery();
@@ -22,8 +14,7 @@ const LocauxPage = () => {
   const [deleteLocal] = useDeleteLocalMutation();
   
   const [search, setSearch] = useState('');
-  const [showDialog, setShowDialog] = useState(false);
-  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     id: null,
     nom: '',
@@ -76,7 +67,7 @@ const LocauxPage = () => {
               });
 
               if (response.ok) {
-                setShowSuccessDialog(true);
+                alert('Les locaux ont été importés avec succès.');
                 refetch();
               } else {
                 const errorData = await response.json();
@@ -114,10 +105,12 @@ const LocauxPage = () => {
       } else {
         await createLocal(formData).unwrap();
       }
-      setShowDialog(false);
+      setShowForm(false);
       resetForm();
+      alert(formData.id ? 'Local modifié avec succès' : 'Local ajouté avec succès');
     } catch (error) {
       console.error('Failed to save local:', error);
+      alert('Erreur lors de la sauvegarde du local');
     }
   };
 
@@ -130,15 +123,17 @@ const LocauxPage = () => {
       nbSurveillants: local.nbSurveillants,
       estDisponible: local.estDisponible
     });
-    setShowDialog(true);
+    setShowForm(true);
   };
 
   const handleDelete = async (id) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer ce local ?')) {
       try {
         await deleteLocal(id).unwrap();
+        alert('Local supprimé avec succès');
       } catch (error) {
         console.error('Failed to delete local:', error);
+        alert('Erreur lors de la suppression du local');
       }
     }
   };
@@ -165,7 +160,7 @@ const LocauxPage = () => {
             className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800"
             onClick={() => {
               resetForm();
-              setShowDialog(true);
+              setShowForm(true);
             }}
           >
             + Ajouter un nouveau local
@@ -239,8 +234,8 @@ const LocauxPage = () => {
         </table>
       </div>
 
-      {/* Dialog pour ajouter/modifier un local */}
-      {showDialog && (
+      {/* Formulaire simple pour ajouter/modifier un local */}
+      {showForm && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center">
           <div className="fixed inset-0 bg-gray-800 bg-opacity-50 z-[9999]"></div>
           <div className="relative z-[10000] bg-white p-6 rounded shadow-lg w-96">
@@ -292,7 +287,7 @@ const LocauxPage = () => {
             <div className="flex justify-end mt-6 space-x-2">
               <button
                 className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400"
-                onClick={() => setShowDialog(false)}
+                onClick={() => setShowForm(false)}
               >
                 Annuler
               </button>
@@ -306,21 +301,6 @@ const LocauxPage = () => {
           </div>
         </div>
       )}
-
-      {/* Dialog de succès pour l'importation CSV */}
-      <AlertDialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Importation réussie</AlertDialogTitle>
-          </AlertDialogHeader>
-          <p>Les locaux ont été importés avec succès.</p>
-          <AlertDialogFooter>
-            <AlertDialogAction className="bg-black text-white hover:bg-gray-800">
-              OK
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };
