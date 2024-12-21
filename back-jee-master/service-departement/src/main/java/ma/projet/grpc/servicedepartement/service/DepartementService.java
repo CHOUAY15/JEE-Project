@@ -19,7 +19,5 @@ public interface DepartementService {
     Enseignant addEnseignantToDepartement(Long departementId, Enseignant enseignant);
     public Map<String, Integer> getNombreEnseignantsParDepartement();
     void saveDepartementsFromCsv(MultipartFile file) throws IOException;
-    void saveDepartements(List<Departement> departements);
-
 
 }

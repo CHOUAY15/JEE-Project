@@ -51,15 +51,5 @@ public class LocalController {
         return localService.findDisponibles();
     }
 
-    @PostMapping("/saveAll")
-    public ResponseEntity<List<Local>> addLocaux(@RequestBody List<Local> locaux) {
-        if (locaux.isEmpty()) {
-            return ResponseEntity.badRequest().body(null); // Returning 400 Bad Request if the list is empty
-        }
-
-        List<Local> savedLocaux = localService.saveLocaux(locaux);
-        return ResponseEntity.ok(savedLocaux); // Returning 200 OK with the saved entities
-    }
-
 
 }

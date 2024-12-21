@@ -32,10 +32,6 @@ public class OptionServiceImpl implements OptionService {
         }
         return null; // or throw an exception
     }
-    @Override
-    public List<Option> saveAll(List<Option> options) {
-        return optionRepository.saveAll(options);
-    }
 
     @Override
     public Option getOptionById(Long id) {

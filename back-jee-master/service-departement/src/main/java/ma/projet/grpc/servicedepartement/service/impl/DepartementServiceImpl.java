@@ -113,8 +113,5 @@ public class DepartementServiceImpl implements DepartementService {
 
         departementRepository.saveAll(departements);
     }
-    public void saveDepartements(List<Departement> departements) {
-        departementRepository.saveAll(departements);
-    }
 
 }
