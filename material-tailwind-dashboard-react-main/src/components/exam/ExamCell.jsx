@@ -7,6 +7,9 @@ export const ExamCell = ({ date, timeSlot, sessionId }) => {
   const [isSchedulerOpen, setIsSchedulerOpen] = useState(false);
   const [selectedExam, setSelectedExam] = useState(null);
   const [deleteExam] = useDeleteExamMutation();
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [examToDelete, setExamToDelete] = useState(null);
+  const [isNewExam, setIsNewExam] = useState(false);
 
   // Récupérer les examens
   const { 
@@ -43,15 +46,19 @@ export const ExamCell = ({ date, timeSlot, sessionId }) => {
     setIsSchedulerOpen(true);
   };
 
+  const handleAddExam = () => {
+    setIsDialogOpen(false);
+    setSelectedExam(null);
+    setIsNewExam(true);
+    setIsSchedulerOpen(true);
+  };
   const handleDelete = async (examId) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer cet examen ?')) {
-      try {
-        await deleteExam(examId).unwrap();
-        await refetch();
-      } catch (error) {
-        console.error('Erreur lors de la suppression:', error);
-        alert('Erreur lors de la suppression de l\'examen');
-      }
+    try {
+      setIsDialogOpen(false); // Close the exam details dialog if open
+      setIsDeleteDialogOpen(true); // Open delete confirmation dialog
+      setExamToDelete(examId);
+    } catch (error) {
+      console.error('Failed to prepare delete:', error);
     }
   };
 
@@ -140,11 +147,7 @@ export const ExamCell = ({ date, timeSlot, sessionId }) => {
 
             <div className="mt-4 flex justify-end">
               <button
-                onClick={() => {
-                  setIsDialogOpen(false);
-                  setSelectedExam(null);
-                  setIsSchedulerOpen(true);
-                }}
+                onClick={handleAddExam}
                 className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 
                   transition-colors duration-200"
               >
@@ -154,12 +157,54 @@ export const ExamCell = ({ date, timeSlot, sessionId }) => {
           </div>
         </div>
       )}
+{isDeleteDialogOpen && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[9999]">
+    <div className="bg-white rounded-lg p-6 w-full max-w-md">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold">Confirmer la suppression</h2>
+        <button 
+          onClick={() => setIsDeleteDialogOpen(false)}
+          className="text-gray-500 hover:text-gray-700"
+        >
+          ×
+        </button>
+      </div>
 
+      <p className="text-gray-600 mb-6">
+        Êtes-vous sûr de vouloir supprimer cet examen ? Cette action est irréversible.
+      </p>
+
+      <div className="flex justify-end space-x-2">
+        <button
+          onClick={() => setIsDeleteDialogOpen(false)}
+          className="px-4 py-2 text-gray-600 hover:text-gray-800"
+        >
+          Annuler
+        </button>
+        <button
+          onClick={async () => {
+            try {
+              await deleteExam(examToDelete).unwrap();
+              await refetch();
+              setIsDeleteDialogOpen(false);
+            } catch (error) {
+              console.error('Failed to delete exam:', error);
+            }
+          }}
+          className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+        >
+          Supprimer
+        </button>
+      </div>
+    </div>
+  </div>
+)}
       <ExamScheduler
         isOpen={isSchedulerOpen}
         onClose={() => {
           setIsSchedulerOpen(false);
           setSelectedExam(null);
+          setIsNewExam(false);
           refetch();
         }}
         date={date}

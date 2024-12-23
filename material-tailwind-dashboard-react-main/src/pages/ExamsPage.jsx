@@ -1,9 +1,21 @@
 import React from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector , useDispatch} from 'react-redux';
 import { ExamCalendar } from '../components/exam/ExamCalendar';
-
+import { useEffect } from 'react';
 const ExamsPage = () => {
+
+  const dispatch = useDispatch();
+
   const selectedSession = useSelector((state) => state.exams.selectedSession);
+  useEffect(() => {
+    if (!selectedSession) {
+      const sessionFromStorage = JSON.parse(localStorage.getItem('selectedSession'));
+      if (sessionFromStorage) {
+        dispatch(setSelectedSession(sessionFromStorage));
+      }
+    }
+  }, [dispatch, selectedSession]);
+
   const sessionId = selectedSession.sessionId;
   console.log('id de session' , sessionId)
 

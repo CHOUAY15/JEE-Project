@@ -73,13 +73,18 @@ export const examApi = createApi({
 const examSlice = createSlice({
   name: 'exams',
   initialState: {
-    selectedSession: null,
+    selectedSession: JSON.parse(localStorage.getItem('selectedSession')) || null,
     activeCell: null,
     error: null
   },
   reducers: {
     setSelectedSession: (state, action) => {
       state.selectedSession = action.payload;
+      localStorage.setItem('selectedSession', JSON.stringify(action.payload));
+    },
+    clearSelectedSession: (state) => {
+      state.selectedSession = null;
+      localStorage.removeItem('selectedSession');
     },
     setActiveCell: (state, action) => {
       state.activeCell = action.payload;
@@ -103,7 +108,8 @@ export const {
 export const {
   setSelectedSession,
   setActiveCell,
-  setError
+  setError,
+  clearSelectedSession
 } = examSlice.actions;
 
 export default examSlice.reducer;
