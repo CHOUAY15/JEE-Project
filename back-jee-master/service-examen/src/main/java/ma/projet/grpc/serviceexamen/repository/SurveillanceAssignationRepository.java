@@ -2,6 +2,7 @@ package ma.projet.grpc.serviceexamen.repository;
 
 import feign.Param;
 import ma.projet.grpc.servicedepartement.entity.Enseignant;
+import ma.projet.grpc.serviceexamen.entity.Session;
 import ma.projet.grpc.serviceexamen.entity.SurveillanceAssignation;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -18,6 +19,14 @@ public interface SurveillanceAssignationRepository extends JpaRepository<Surveil
 
     @Query("SELECT COUNT(sa) FROM SurveillanceAssignation sa WHERE sa.examen.id = :examenId")
     int countByExamen(Long examenId);
+
+    List<SurveillanceAssignation> findBySessionId(Long sessionId);
+
+    SurveillanceAssignation findByEnseignantAndExamen_DateAndExamen_Horaire(
+            Long enseignantId, LocalDate date, String horaire);
+
+    @Query("SELECT sa FROM SurveillanceAssignation sa WHERE sa.examen.session.id = :sessionId AND sa.examen.date = :date")
+    List<SurveillanceAssignation> findBySessionAndDate(@Param("sessionId") Long sessionId, @Param("date") LocalDate date);
 
     @Query("SELECT COUNT(sa) FROM SurveillanceAssignation sa " +
             "WHERE sa.examen.date = :date " +
@@ -60,5 +69,10 @@ public interface SurveillanceAssignationRepository extends JpaRepository<Surveil
     List<Integer> findAssignedEnseignantsApresMidi(@Param("date") LocalDate date);
 
 
+
+    @Query("DELETE FROM SurveillanceAssignation sa WHERE sa.examen.session = :session")
+    void deleteAllBySession(@Param("session") Session session);
+
+    List<SurveillanceAssignation> findByExamen_Session_Id(Long sessionId);
 
 }

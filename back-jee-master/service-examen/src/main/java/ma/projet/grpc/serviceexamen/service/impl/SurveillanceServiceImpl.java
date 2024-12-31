@@ -5,12 +5,17 @@ import jakarta.transaction.Transactional;
 import ma.projet.grpc.servicedepartement.entity.Enseignant;
 import ma.projet.grpc.servicedepartement.entity.Local;
 
+import ma.projet.grpc.serviceexamen.dto.ExamenResponse;
 import ma.projet.grpc.serviceexamen.entity.Examen;
+import ma.projet.grpc.serviceexamen.entity.Module;
+
+import ma.projet.grpc.serviceexamen.entity.Option;
 import ma.projet.grpc.serviceexamen.entity.Session;
 import ma.projet.grpc.serviceexamen.entity.SurveillanceAssignation;
 import ma.projet.grpc.serviceexamen.feignClients.EnseignantClient;
 import ma.projet.grpc.serviceexamen.feignClients.LocalClient;
 import ma.projet.grpc.serviceexamen.repository.ExamenRepository;
+import ma.projet.grpc.serviceexamen.repository.ModuleRepository;
 import ma.projet.grpc.serviceexamen.repository.SessionRepository;
 import ma.projet.grpc.serviceexamen.repository.SurveillanceAssignationRepository;
 import ma.projet.grpc.serviceexamen.service.SurveillanceService;
@@ -31,6 +36,10 @@ public class SurveillanceServiceImpl implements SurveillanceService {
 
 
     @Autowired
+    private ModuleRepository moduleRepository;
+
+
+    @Autowired
     private EnseignantClient enseignantClient;
 
     @Autowired
@@ -42,6 +51,41 @@ public class SurveillanceServiceImpl implements SurveillanceService {
     @Autowired
     private LocalClient localClient;
 
+
+
+    @Override
+    public List<ExamenResponse> getExamensByDateAndHoraireres(LocalDate date, String horaire, Long sessionId) {
+        List<Examen> examens = examenRepository.findBySessionIdAndDateAndHoraire(sessionId, date, horaire);
+
+        // Convertir les examens en ExamenResponse avec les informations d'option
+        return examens.stream()
+                .map(examen -> {
+                    ExamenResponse response = new ExamenResponse();
+                    response.setId(examen.getId());
+                    response.setModule(examen.getModule());
+                    response.setDate(examen.getDate());
+                    response.setHoraire(examen.getHoraire());
+                    response.setLocaux(examen.getLocaux());
+
+                    // Récupérer le module et son option
+                    try {
+                        Optional<ma.projet.grpc.serviceexamen.entity.Module> moduleOpt = moduleRepository.findByNom(examen.getModule());
+                        if (moduleOpt.isPresent()) {
+                            Module module = moduleOpt.get();
+                            Option option = module.getOption();
+                            response.setOptionId(option.getId());
+                            response.setOptionName(option.getNomOption());
+                        }
+                    } catch (Exception e) {
+                        // Log l'erreur mais continuer le traitement
+                        System.err.println("Erreur lors de la récupération de l'option pour le module: " + examen.getModule());
+                        e.printStackTrace();
+                    }
+
+                    return response;
+                })
+                .collect(Collectors.toList());
+    }
     @Override
     public List<Map<String, Object>> getEmploiSurveillance(Long sessionId, Long departementId) {
         Session session = sessionRepository.findById(sessionId)
@@ -226,6 +270,23 @@ public class SurveillanceServiceImpl implements SurveillanceService {
         return horaire.startsWith("start1") || horaire.startsWith("start2") ? "MATIN" : "APRES_MIDI";
     }
 
+
+
+    @Override
+    public List<SurveillanceAssignation> getAssignmentsBySession(Long sessionId) {
+        return surveillanceAssignationRepository.findBySessionId(sessionId);
+    }
+
+    @Override
+    @Transactional  // Important pour la suppression
+    public void deleteById(Long id) {
+        // Vérifier si l'assignation existe
+        if (surveillanceAssignationRepository.existsById(id)) {
+            surveillanceAssignationRepository.deleteById(id);
+        } else {
+            throw new RuntimeException("Surveillance assignment not found with id: " + id);
+        }
+    }
 
     @Override
     public SurveillanceAssignation assignSurveillant(SurveillanceAssignation assignation) {

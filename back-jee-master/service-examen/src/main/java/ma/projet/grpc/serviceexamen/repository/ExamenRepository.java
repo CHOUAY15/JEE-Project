@@ -14,6 +14,8 @@ public interface ExamenRepository extends JpaRepository<Examen, Long> {
     // Requête dérivée correcte
     List<Examen> findBySessionIdAndDateAndHoraire(Long sessionId, LocalDate date, String horaire);
 
+    List<Examen> findBySessionId(Long sessionId);
+
     // Requête personnalisée avec @Query
     @Query("SELECT e FROM Examen e WHERE e.date = :date AND e.horaire = :horaire " +
             "AND e.session.id = :sessionId AND e.departementId = :departementId")

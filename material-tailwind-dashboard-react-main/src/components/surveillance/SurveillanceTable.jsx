@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import * as XLSX from 'xlsx';
-import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
-import { 
-  selectPeriod, 
-  navigateDates, 
-  changeDepartment,
-  setInitialDate 
-} from '../../features/surveillance/surveillanceSlice';
 import { useGetDepartmentsQuery } from '../../features/department/departmentSlice';
 import { useGetDepartmentTeachersQuery } from '../../features/teacher/teacherSlice';
+import { 
+  setInitialDate,
+  navigateDates,
+  changeDepartment,
+  selectPeriod,
+  setSurveillancesFromAssignments
+} from '../../features/surveillance/surveillanceSlice';
+import { useGetSurveillanceAssignmentsQuery } from '../../features/surveillance/surveillanceAPI';
 import { SurveillanceCell } from './SurveillanceCell';
 import { SurveillanceModal } from './SurveillanceModal';
 
@@ -25,35 +24,64 @@ export const SurveillanceTable = () => {
 
   const [selectedCell, setSelectedCell] = useState(null);
 
-  const { data: departments = [], isLoading: isLoadingDepartments } = useGetDepartmentsQuery();
+  const { data: assignments, isLoading: isLoadingAssignments } = useGetSurveillanceAssignmentsQuery(
+    {
+      sessionId: selectedSession?.sessionId
+    },
+    {
+      skip: !selectedSession?.sessionId
+    }
+  );
 
-  // Récupérer les enseignants du département sélectionné
+  useEffect(() => {
+    if (assignments) {
+      const surveillances = {};
+      assignments.forEach(assignment => {
+        const key = `${assignment.enseignantId}-${assignment.date}-${assignment.horaire}`;
+        surveillances[key] = {
+          id: assignment.id,
+          localId: assignment.localId,
+          examenId: assignment.examenId,
+          typeSurveillant: assignment.typeSurveillant,
+          status: assignment.typeSurveillant === 'PRINCIPAL' ? `Local ${assignment.localId}` : assignment.typeSurveillant
+        };
+      });
+      dispatch(setSurveillancesFromAssignments(surveillances));
+    }
+  }, [assignments, dispatch]);
 
 
   useEffect(() => {
-    // Initialiser la date au chargement si une session est sélectionnée
+    if (assignments) {
+      console.log('Assignments reçus du backend:', assignments);
+      dispatch(setSurveillancesFromAssignments(assignments));
+    }
+  }, [assignments, dispatch]);
+  
+  const { data: departments = [], isLoading: isLoadingDepartments } = useGetDepartmentsQuery();
+
+  useEffect(() => {
     if (selectedSession?.sessionDates?.start && !currentStartDate) {
       dispatch(setInitialDate(selectedSession.sessionDates.start));
     }
   }, [selectedSession, currentStartDate, dispatch]);
 
-  const formatDateForDisplay = (dateStr) => {
-    if (!dateStr) return '';
-    const date = new Date(dateStr);
-    return new Intl.DateTimeFormat('fr-FR', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    }).format(date);
-  };
-
   useEffect(() => {
-    // Si aucun département n'est sélectionné et qu'il y a des départements disponibles
     if (!selectedDepartment && departments.length > 0) {
       dispatch(changeDepartment(departments[0].nom));
     }
   }, [departments, selectedDepartment, dispatch]);
+
+  const getCurrentDepartmentId = () => {
+    const dept = departments.find(d => d.nom === selectedDepartment);
+    return dept?.id;
+  };
+
+  const departmentId = getCurrentDepartmentId();
+  const { data: teachers = [], isLoading: isLoadingTeachers } = useGetDepartmentTeachersQuery(
+    departmentId,
+    { skip: !departmentId }
+  );
 
   const timeSlots = selectedSession ? {
     'Matin': [
@@ -69,29 +97,8 @@ export const SurveillanceTable = () => {
     'Après-midi': ['14:30-16:00', '16:30-18:00']
   };
 
-  const getCurrentDepartmentId = () => {
-    const dept = departments.find(d => d.nom === selectedDepartment);
-    console.log("Current department:", { selectedDepartment, dept, departments });
-    return dept?.id;
-  };
-  
-  // Utiliser le hook avec l'ID correct
-  const departmentId = getCurrentDepartmentId();
-  const { data: teachers = [], isLoading: isLoadingTeachers } = useGetDepartmentTeachersQuery(
-    departmentId,
-    { skip: !departmentId }
-  );
-  
-  // Ajouter des logs pour déboguer
-  console.log("Query state:", { 
-    departmentId, 
-    teachers, 
-    isLoadingTeachers 
-  });
-
   const getDates = () => {
     if (!selectedSession || !currentStartDate) {
-      console.log("Missing data:", { selectedSession, currentStartDate });
       return [];
     }
 
@@ -103,23 +110,12 @@ export const SurveillanceTable = () => {
     for (let i = 0; i < 3; i++) {
       const date = new Date(startDate);
       date.setDate(startDate.getDate() + i);
-      
-      // Vérifier que la date est dans les limites de la session
       if (date >= sessionStart && date <= sessionEnd) {
         dates.push(date.toISOString().split('T')[0]);
       }
     }
-    
-    console.log("Generated dates:", dates);
     return dates;
   };
-  useEffect(() => {
-    console.log("Department or teachers changed:", {
-      selectedDepartment,
-      departmentId: getCurrentDepartmentId(),
-      teachersCount: teachers.length
-    });
-  }, [selectedDepartment, teachers]);
 
   const dates = getDates();
 
@@ -150,18 +146,6 @@ export const SurveillanceTable = () => {
     dispatch(selectPeriod({ date, period }));
   };
 
-  const exportToExcel = () => {
-    const workbook = XLSX.utils.book_new();
-    
-    // ... (rest of exportToExcel logic remains the same)
-  };
-
-  const exportToPDF = () => {
-    const doc = new jsPDF('landscape');
-    
-    // ... (rest of exportToPDF logic remains the same)
-  };
-
   if (!selectedSession) {
     return (
       <div className="text-center text-gray-500 p-4">
@@ -169,13 +153,6 @@ export const SurveillanceTable = () => {
       </div>
     );
   }
-
-  console.log("Rendering with:", { 
-    selectedSession, 
-    currentStartDate, 
-    dates,
-    timeSlots 
-  });
 
   if (isLoadingDepartments || isLoadingTeachers) {
     return (
@@ -188,13 +165,16 @@ export const SurveillanceTable = () => {
     );
   }
 
-  if (!selectedSession) {
-    return (
-      <div className="text-center text-gray-500 p-4">
-        Veuillez sélectionner une session d'examen
-      </div>
-    );
-  }
+  const formatDateForDisplay = (dateStr) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return new Intl.DateTimeFormat('fr-FR', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    }).format(date);
+  };
 
   return (
     <div className="space-y-4">
@@ -208,32 +188,19 @@ export const SurveillanceTable = () => {
           </p>
         </div>
         <div className="flex items-center space-x-4">
-          <button
-            onClick={exportToExcel}
-            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
+          <select
+            value={selectedDepartment}
+            onChange={(e) => {
+              dispatch(changeDepartment(e.target.value));
+            }}
+            className="border rounded px-3 py-1"
           >
-            Exporter Excel
-          </button>
-          <button
-            onClick={exportToPDF}
-            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
-          >
-            Exporter PDF
-          </button>
-       <select
-  value={selectedDepartment}
-  onChange={(e) => {
-    console.log("Changing department to:", e.target.value);
-    dispatch(changeDepartment(e.target.value));
-  }}
-  className="border rounded px-3 py-1"
->
-  {departments.map(dept => (
-    <option key={dept.id} value={dept.nom}>
-      {dept.nom}
-    </option>
-  ))}
-</select>
+            {departments.map(dept => (
+              <option key={dept.id} value={dept.nom}>
+                {dept.nom}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 

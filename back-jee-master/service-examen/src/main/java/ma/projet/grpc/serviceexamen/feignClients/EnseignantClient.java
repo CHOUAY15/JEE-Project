@@ -10,6 +10,8 @@ import java.util.List;
 @FeignClient(name = "SERVICE-DEPARTEMENT")  // Le nom du serviceA tel qu'il est enregistré dans Eureka
 public interface EnseignantClient {
 
+    @GetMapping("/enseignants")
+    List<Enseignant> getAllEnseignants();
     @GetMapping("/enseignants/disponibles")
     List<Enseignant> getEnseignantsDisponibles();
     @GetMapping("/enseignants/{id}")

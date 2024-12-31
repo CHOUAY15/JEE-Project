@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useGetOptionsQuery, useCreateExamMutation, useUpdateExamMutation, 
-         useGetLocauxQuery, useGetExamsQuery } from '../../features/exam/examSlice';
+          useGetExamsQuery } from '../../features/exam/examSlice';
 import { Loader2 } from "lucide-react";
+import { useAssignSurveillantMutation } from '../../features/surveillance/surveillanceAPI';
+import { useGetLocauxQuery } from '@/features/local/localSlice';
 
 export const ExamScheduler = ({ isOpen, onClose, date, timeSlot, sessionId, examToEdit, isNewExam }) => {
 
@@ -13,7 +15,8 @@ export const ExamScheduler = ({ isOpen, onClose, date, timeSlot, sessionId, exam
     { sessionId, date, horaire: timeSlot },
     { skip: !sessionId }
   );
-  
+  const [assignSurveillant] = useAssignSurveillantMutation();
+
   const [formData, setFormData] = useState({
     optionId: '',
     moduleId: '',
@@ -108,7 +111,10 @@ export const ExamScheduler = ({ isOpen, onClose, date, timeSlot, sessionId, exam
       .filter(exam => exam.id !== examToEdit?.id)
       .flatMap(exam => exam.locaux || []);
 
-    return locaux.filter(local => !usedLocauxIds.includes(local.id));
+    return locaux.filter(local => 
+      !usedLocauxIds.includes(local.id) && 
+      local.estDisponible === true
+    );
   };
 
   const availableLocaux = getAvailableLocaux();
@@ -129,36 +135,71 @@ export const ExamScheduler = ({ isOpen, onClose, date, timeSlot, sessionId, exam
       }));
       return [];
     }
-
+  
     const count = parseInt(studentCount);
     if (!count) return [];
-
-    const amphis = availableLocaux
-      .filter(local => local.type === 'amphi')
-      .sort((a, b) => b.capacite - a.capacite);
-
-    const salles = availableLocaux
-      .filter(local => local.type === 'salle')
-      .sort((a, b) => b.capacite - a.capacite);
-
-    const assigned = [];
-    let remainingStudents = count;
-
-    for (const amphi of amphis) {
-      if (remainingStudents <= 0) break;
-      if (remainingStudents >= amphi.capacite * 0.7) {
-        assigned.push(amphi.id);
-        remainingStudents -= amphi.capacite;
+  
+    // On récupère tous les locaux disponibles et on les trie par capacité croissante
+    const locauxDisponibles = availableLocaux
+      .filter(local => local.estDisponible === true)
+      .sort((a, b) => a.capacite - b.capacite);
+  
+    // On sépare les amphis et les salles
+    const amphis = locauxDisponibles.filter(local => local.type === 'amphi');
+    const salles = locauxDisponibles.filter(local => local.type === 'salle');
+    
+    // Fonction pour calculer la capacité totale d'une liste de locaux
+    const calculerCapaciteTotale = (locaux) => {
+      return locaux.reduce((total, local) => total + local.capacite, 0);
+    };
+  
+    // Fonction pour trouver la meilleure combinaison de locaux
+    const trouverMeilleureCombination = (nbEtudiants, locauxPossibles) => {
+      let meilleureCombination = [];
+      let meilleurGaspillage = Infinity;
+      
+      // On essaie toutes les combinaisons possibles de locaux
+      for (let i = 0; i < locauxPossibles.length; i++) {
+        let combinaisonActuelle = [];
+        let capaciteTotale = 0;
+        let j = i;
+        
+        // On ajoute des locaux jusqu'à avoir assez de places
+        while (capaciteTotale < nbEtudiants && j < locauxPossibles.length) {
+          combinaisonActuelle.push(locauxPossibles[j]);
+          capaciteTotale += locauxPossibles[j].capacite;
+          j++;
+        }
+        
+        // Si on a trouvé une combinaison valide
+        if (capaciteTotale >= nbEtudiants) {
+          const gaspillage = capaciteTotale - nbEtudiants;
+          
+          // Si c'est la meilleure combinaison trouvée jusqu'ici
+          if (gaspillage < meilleurGaspillage) {
+            meilleurGaspillage = gaspillage;
+            meilleureCombination = combinaisonActuelle;
+          }
+        }
+      }
+      
+      return meilleureCombination;
+    };
+  
+    // D'abord, on essaie avec les amphis si possible (avec un taux de remplissage > 70%)
+    if (amphis.length > 0) {
+      const combinaisonAmphis = trouverMeilleureCombination(count, amphis);
+      if (combinaisonAmphis.length > 0) {
+        const capaciteTotaleAmphis = calculerCapaciteTotale(combinaisonAmphis);
+        if ((count / capaciteTotaleAmphis) >= 0.7) {
+          return combinaisonAmphis.map(local => local.id);
+        }
       }
     }
-
-    for (const salle of salles) {
-      if (remainingStudents <= 0) break;
-      assigned.push(salle.id);
-      remainingStudents -= salle.capacite;
-    }
-
-    return assigned;
+  
+    // Sinon, on cherche la meilleure combinaison avec tous les locaux disponibles
+    const meilleureCombination = trouverMeilleureCombination(count, locauxDisponibles);
+    return meilleureCombination.map(local => local.id);
   };
 
   const validateForm = () => {
@@ -198,32 +239,48 @@ export const ExamScheduler = ({ isOpen, onClose, date, timeSlot, sessionId, exam
     e.preventDefault();
     setError(null);
     setValidationErrors({});
-
+  
     if (!validateForm()) {
       return;
     }
-
+  
     setIsSubmitting(true);
-
+  
     try {
       const finalLocaux = localAssignmentMode === 'auto' 
         ? autoAssignLocaux(formData.nombreEtudiants)
         : selectedLocaux;
-
+  
       const examData = {
         ...(examToEdit?.id && { id: examToEdit.id }),
         session: { id: parseInt(sessionId) },
-        module: selectedModule?.nom || '', // Send module name, not ID
+        module: selectedModule?.nom || '',
         nbEtudiants: parseInt(formData.nombreEtudiants),
         locaux: finalLocaux,
         date: date,
         horaire: timeSlot
       };
-
-      if (examToEdit) {
-        await updateExam(examData).unwrap();
-      } else {
-        await createExam(examData).unwrap();
+  
+      // Créer ou mettre à jour l'examen
+      const result = examToEdit 
+        ? await updateExam(examData).unwrap()
+        : await createExam(examData).unwrap();
+  
+      // Après la création de l'examen, créer l'assignation TT pour le responsable
+      if (!examToEdit && selectedModule?.responsableId) {
+        try {
+          await assignSurveillant({
+            enseignantId: selectedModule.responsableId,
+            date,
+            horaire: timeSlot,
+            sessionId,
+            typeSurveillant: 'TT',
+            examenId: result.id  // L'ID de l'examen qui vient d'être créé
+          }).unwrap();
+        } catch (assignError) {
+          console.error('Erreur lors de l\'assignation TT:', assignError);
+          // On peut choisir de ne pas bloquer même si l'assignation échoue
+        }
       }
       
       onClose();
@@ -234,7 +291,6 @@ export const ExamScheduler = ({ isOpen, onClose, date, timeSlot, sessionId, exam
       setIsSubmitting(false);
     }
   };
-
   if (!isOpen) return null;
 
   return (

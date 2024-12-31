@@ -13,6 +13,10 @@ export const teacherApi = createApi({
       query: (departmentId) => `/departements/${departmentId}/enseignants`,
       providesTags: ['Teacher']
     }),
+    getAllTeachers: builder.query({
+      query: () => '/enseignants',  // Ajustez l'URL selon votre API
+      providesTags: ['Teachers']
+    }),
     createTeacher: builder.mutation({
       query: ({ departmentId, teacher }) => ({
         url: `/departements/${departmentId}/enseignants`,
@@ -43,5 +47,6 @@ export const {
   useGetDepartmentTeachersQuery,
   useCreateTeacherMutation,
   useUpdateTeacherMutation,
-  useDeleteTeacherMutation
+  useDeleteTeacherMutation,
+  useGetAllTeachersQuery
 } = teacherApi;

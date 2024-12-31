@@ -2,6 +2,7 @@ package ma.projet.grpc.serviceexamen.service;
 
 import ma.projet.grpc.servicedepartement.entity.Enseignant;
 import ma.projet.grpc.servicedepartement.entity.Local;
+import ma.projet.grpc.serviceexamen.dto.ExamenResponse;
 import ma.projet.grpc.serviceexamen.entity.Examen;
 import ma.projet.grpc.serviceexamen.entity.SurveillanceAssignation;
 
@@ -17,6 +18,9 @@ public interface SurveillanceService {
     List<Local> getLocauxDisponibles(LocalDate date, String horaire);
     boolean verifierContraintesSurveillance(Long examenId, Long enseignantId, Long localId, String typeSurveillant);
     int getNombreSurveillantRequis(int nbEtudiants);
+    List<SurveillanceAssignation> getAssignmentsBySession(Long sessionId);
+    void deleteById(Long id);
+    List<ExamenResponse> getExamensByDateAndHoraireres(LocalDate date, String horaire, Long sessionId);
 
 
     SurveillanceAssignation assignSurveillant(SurveillanceAssignation assignation);

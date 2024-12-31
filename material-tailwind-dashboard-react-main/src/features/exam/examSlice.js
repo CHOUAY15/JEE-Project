@@ -1,6 +1,7 @@
 // src/features/exam/examSlice.js
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { createSlice } from '@reduxjs/toolkit';
+import { surveillanceApi } from '../surveillance/surveillanceAPI';
 
 // RTK Query API
 export const examApi = createApi({
@@ -9,7 +10,7 @@ export const examApi = createApi({
     baseUrl: 'http://localhost:8888/SERVICE-EXAMEN/api',
     credentials: 'include'
   }),
-  tagTypes: ['Exam'],
+  tagTypes: ['Exam', 'Local', 'Option', 'Module'],  // Ajoutez 'Local' ici
   endpoints: (builder) => ({
     getExams: builder.query({
       query: ({ sessionId, date, horaire }) => {
@@ -49,7 +50,17 @@ export const examApi = createApi({
         method: 'POST',
         body: exam
       }),
-      invalidatesTags: ['Exam']
+      invalidatesTags: (result, error, exam) => [
+        'Exam',
+        { type: 'ExamensSurveillance' }
+      ],
+      async onQueryStarted(exam, { dispatch, queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          // Force le rechargement des requêtes getExamens et getExamensRes
+          dispatch(surveillanceApi.util.invalidateTags(['ExamensSurveillance']));
+        } catch {}
+      }
     }),
     updateExam: builder.mutation({
       query: ({ id, ...exam }) => ({
@@ -57,14 +68,32 @@ export const examApi = createApi({
         method: 'PUT',
         body: exam
       }),
-      invalidatesTags: ['Exam']
+      invalidatesTags: (result, error, { id }) => [
+        'Exam',
+        { type: 'ExamensSurveillance' }
+      ],
+      async onQueryStarted({ id }, { dispatch, queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          dispatch(surveillanceApi.util.invalidateTags(['ExamensSurveillance']));
+        } catch {}
+      }
     }),
     deleteExam: builder.mutation({
       query: (id) => ({
         url: `/examens/${id}`,
         method: 'DELETE'
       }),
-      invalidatesTags: ['Exam']
+      invalidatesTags: (result, error, id) => [
+        'Exam',
+        { type: 'ExamensSurveillance' }
+      ],
+      async onQueryStarted(id, { dispatch, queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          dispatch(surveillanceApi.util.invalidateTags(['ExamensSurveillance']));
+        } catch {}
+      }
     })
   })
 });

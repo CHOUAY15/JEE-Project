@@ -4,8 +4,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import ma.projet.grpc.servicedepartement.entity.Enseignant;
-import ma.projet.grpc.servicedepartement.entity.Local;
+import java.time.LocalDate;
 
 @Entity
 @Data
@@ -20,53 +19,18 @@ public class SurveillanceAssignation {
     @JoinColumn(name = "examen_id")
     private Examen examen;
 
-
     private Long enseignant;
-
 
     private Long local;
 
     private String typeSurveillant;// PRINCIPAL ou RESERVISTE
 
+    // Ajouter ces deux champs
+    private LocalDate date;
 
+    private String horaire;
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Examen getExamen() {
-        return examen;
-    }
-
-    public void setExamen(Examen examen) {
-        this.examen = examen;
-    }
-
-    public Long getEnseignant() {
-        return enseignant;
-    }
-
-    public void setEnseignant(Long enseignant) {
-        this.enseignant = enseignant;
-    }
-
-    public Long getLocal() {
-        return local;
-    }
-
-    public void setLocal(Long local) {
-        this.local = local;
-    }
-
-    public String getTypeSurveillant() {
-        return typeSurveillant;
-    }
-
-    public void setTypeSurveillant(String typeSurveillant) {
-        this.typeSurveillant = typeSurveillant;
-    }
+    @ManyToOne
+    @JoinColumn(name = "session_id")
+    private Session session;
 }
