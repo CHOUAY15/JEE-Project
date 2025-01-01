@@ -3,6 +3,7 @@ package ma.projet.grpc.serviceexamen.controller;
 import ma.projet.grpc.serviceexamen.entity.Option;
 import ma.projet.grpc.serviceexamen.service.OptionService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -37,5 +38,11 @@ public class OptionController {
     @DeleteMapping("/{id}")
     public void deleteOption(@PathVariable Long id) {
         optionService.deleteOption(id);
+    }
+
+    @PostMapping("/import")
+    public ResponseEntity<List<Option>> saveAllOptions(@RequestBody List<Option> options) {
+        List<Option> savedOptions = optionService.saveAllOptions(options);
+        return ResponseEntity.ok(savedOptions);
     }
 }

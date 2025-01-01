@@ -13,4 +13,5 @@ public interface LocalService {
     void deleteLocal(Long id);
 
     List<Local> findDisponibles();
+    List<Local> saveAll(List<Local> locaux);
 }

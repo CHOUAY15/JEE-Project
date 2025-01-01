@@ -10,4 +10,5 @@ public interface OptionService {
     Option getOptionById(Long id);
     List<Option> getAllOptions();
     void deleteOption(Long id);
+    List<Option> saveAllOptions(List<Option> options);
 }

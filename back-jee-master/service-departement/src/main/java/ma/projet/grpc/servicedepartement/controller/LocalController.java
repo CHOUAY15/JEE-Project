@@ -51,5 +51,9 @@ public class LocalController {
         return localService.findDisponibles();
     }
 
-
+    @PostMapping("/saveAll")
+    public ResponseEntity<List<Local>> saveAllLocaux(@RequestBody List<Local> locaux) {
+        List<Local> savedLocaux = localService.saveAll(locaux);
+        return ResponseEntity.ok(savedLocaux);
+    }
 }

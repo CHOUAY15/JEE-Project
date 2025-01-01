@@ -57,5 +57,8 @@ public class LocalServiceImpl implements LocalService {
     public List<Local> findDisponibles(){
         return localRepository.findDisponibles();
     }
+    public List<Local> saveAll(List<Local> locaux) {
+        return localRepository.saveAll(locaux);
+    }
 }
 
