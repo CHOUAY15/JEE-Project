@@ -15,6 +15,8 @@ const SessionPage = () => {
   const [deleteSession] = useDeleteSessionMutation();
 
   const [showModal, setShowModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [sessionToDelete, setSessionToDelete] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedSessionId, setSelectedSessionId] = useState(null);
   const [newSession, setNewSession] = useState({
@@ -32,29 +34,25 @@ const SessionPage = () => {
     end4: '18:30',
   });
 
-  // Dans SessionPage.jsx, modifiez handleSessionClick:
-const dispatch = useDispatch();  // Ajoutez ceci en haut avec les autres hooks
+  const dispatch = useDispatch();
 
-const handleSessionClick = (session) => {
-  // Sauvegarder la session dans Redux avant de naviguer
-  dispatch(setSelectedSession({ 
-    sessionId: session.id,
-    sessionType: session.typeSession,
-    sessionDates: {
-      start: session.dateDebut,
-      end: session.dateFin
-    },
-    timeSlots: {
-      slot1: { start: session.start1, end: session.end1 },
-      slot2: { start: session.start2, end: session.end2 },
-      slot3: { start: session.start3, end: session.end3 },
-      slot4: { start: session.start4, end: session.end4 }
-    }
-  }));
-  
-  // Naviguer vers home comme avant
-  navigate(`/dashboard/home`);
-};
+  const handleSessionClick = (session) => {
+    dispatch(setSelectedSession({ 
+      sessionId: session.id,
+      sessionType: session.typeSession,
+      sessionDates: {
+        start: session.dateDebut,
+        end: session.dateFin
+      },
+      timeSlots: {
+        slot1: { start: session.start1, end: session.end1 },
+        slot2: { start: session.start2, end: session.end2 },
+        slot3: { start: session.start3, end: session.end3 },
+        slot4: { start: session.start4, end: session.end4 }
+      }
+    }));
+    navigate(`/dashboard/home`);
+  };
 
   const handleEditClick = (e, session) => {
     e.stopPropagation();
@@ -84,14 +82,26 @@ const handleSessionClick = (session) => {
     }
   };
 
-  const handleDeleteSession = async (e, id) => {
+  const handleDeleteClick = (e, session) => {
     e.stopPropagation();
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette session ?')) {
-      try {
-        await deleteSession(id).unwrap();
-      } catch (error) {
-        console.error("Failed to delete session:", error);
-      }
+    setSessionToDelete(session);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!sessionToDelete) {
+      console.error("No session selected for deletion");
+      return;
+    }
+    
+    try {
+      const result = await deleteSession(sessionToDelete.id).unwrap();
+      console.log("Delete result:", result); // Pour le débogage
+      setShowDeleteModal(false);
+      setSessionToDelete(null);
+    } catch (error) {
+      console.error("Failed to delete session:", error);
+      // Optionnellement, ajoutez une notification d'erreur ici
     }
   };
 
@@ -171,7 +181,7 @@ const handleSessionClick = (session) => {
                         Modifier
                       </button>
                       <button
-                        onClick={(e) => handleDeleteSession(e, session.id)}
+                        onClick={(e) => handleDeleteClick(e, session)}
                         className="text-red-600 hover:text-red-800"
                       >
                         Supprimer
@@ -184,6 +194,31 @@ const handleSessionClick = (session) => {
           </div>
         )}
 
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+            <div className="bg-white rounded p-6 w-[400px]">
+              <h3 className="text-lg font-bold mb-4">Confirmer la suppression</h3>
+              <p className="mb-6">Êtes-vous sûr de vouloir supprimer cette session ? Cette action ne peut pas être annulée.</p>
+              <div className="flex justify-end gap-4">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-100"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={handleConfirmDelete}
+                  className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                >
+                  Supprimer
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Add/Edit Session Modal */}
         {showModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
             <div className="bg-white rounded p-6 w-[400px] max-h-[90vh] overflow-y-auto">

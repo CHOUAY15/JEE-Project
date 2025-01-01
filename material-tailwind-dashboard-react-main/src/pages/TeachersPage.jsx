@@ -154,7 +154,7 @@ const handleSubmit = async (e) => {
             <th className="p-2 text-left">Prénom</th>
             <th className="p-2 text-left">Email</th>
             <th className="p-2 text-left">Dispensé</th>
-            <th className="p-2 text-left">Surveillances</th>
+           
             <th className="p-2 text-left">Actions</th>
           </tr>
         </thead>
@@ -165,7 +165,7 @@ const handleSubmit = async (e) => {
               <td className="p-2">{teacher.prenom}</td>
               <td className="p-2">{teacher.email}</td>
               <td className="p-2">{teacher.estDispense ? '✓' : '✗'}</td>
-              <td className="p-2">{teacher.nbSurveillances}</td>
+             
               <td className="p-2">
                 <button
                   onClick={() => handleEditClick(teacher)}

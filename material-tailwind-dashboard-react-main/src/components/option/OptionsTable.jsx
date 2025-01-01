@@ -45,7 +45,7 @@ export default function OptionsTable({ options, onOptionClick, onEdit, onDelete 
                     e.stopPropagation();
                     onDelete(option.id);
                   }}
-                  className="text-red-600 hover:text-red-800"
+                  className="px-3 py-1 bg-red-100 text-red-600 rounded hover:bg-red-200"
                 >
                   Supprimer
                 </button>

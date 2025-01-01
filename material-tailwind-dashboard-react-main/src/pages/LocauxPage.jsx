@@ -15,6 +15,14 @@ const LocauxPage = () => {
   
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [localToDelete, setLocalToDelete] = useState(null);
+  const [notification, setNotification] = useState({
+    show: false,
+    message: '',
+    type: 'success'
+  });
+
   const [formData, setFormData] = useState({
     id: null,
     nom: '',
@@ -24,17 +32,32 @@ const LocauxPage = () => {
     estDisponible: true
   });
 
+  const showNotification = (message, type = 'success') => {
+    setNotification({
+      show: true,
+      message,
+      type
+    });
+    setTimeout(() => {
+      setNotification(prev => ({ ...prev, show: false }));
+    }, 3000);
+  };
+
   const handleCSVUpload = (event) => {
     const file = event.target.files[0];
+    console.log('Fichier sélectionné:', file);
+  
     if (file && file.type === 'text/csv') {
       const reader = new FileReader();
       
       reader.onload = async (e) => {
         const csvData = e.target.result;
+        console.log('Contenu brut du CSV:', csvData);
         
         Papa.parse(csvData, {
           header: true,
           complete: async (results) => {
+            console.log('Résultats du parsing CSV:', results);
             try {
               const locauxData = results.data
                 .filter(row => row && row.nom)
@@ -42,13 +65,13 @@ const LocauxPage = () => {
                   const capacite = parseInt(row.capacite);
                   const nbSurveillants = parseInt(row.nbSurveillants);
                   let estDisponible = true;
-
+  
                   if (typeof row.estDisponible === 'string') {
                     estDisponible = row.estDisponible.toLowerCase() === 'true';
                   } else if (typeof row.estDisponible === 'boolean') {
                     estDisponible = row.estDisponible;
                   }
-
+  
                   return {
                     nom: (row.nom || '').trim(),
                     capacite: isNaN(capacite) ? 0 : capacite,
@@ -57,7 +80,9 @@ const LocauxPage = () => {
                     estDisponible: estDisponible
                   };
                 });
-
+  
+              console.log('Données formatées pour l\'envoi:', locauxData);
+              
               const response = await fetch('http://localhost:8888/SERVICE-DEPARTEMENT/locaux/saveAll', {
                 method: 'POST',
                 headers: {
@@ -65,29 +90,29 @@ const LocauxPage = () => {
                 },
                 body: JSON.stringify(locauxData)
               });
-
+  
               if (response.ok) {
-                alert('Les locaux ont été importés avec succès.');
+                showNotification('Les locaux ont été importés avec succès');
                 refetch();
               } else {
                 const errorData = await response.json();
-                alert('Erreur lors de l\'importation: ' + errorData.message);
+                showNotification(errorData.message || 'Erreur lors de l\'importation', 'error');
               }
             } catch (error) {
               console.error('Erreur lors de l\'importation:', error);
-              alert('Erreur lors de l\'importation du fichier CSV');
+              showNotification('Erreur lors de l\'importation du fichier CSV', 'error');
             }
           },
           error: (error) => {
             console.error('Erreur lors de la lecture du CSV:', error);
-            alert('Erreur lors de la lecture du fichier CSV');
+            showNotification('Erreur lors de la lecture du fichier CSV', 'error');
           }
         });
       };
-
+  
       reader.readAsText(file);
     } else {
-      alert('Veuillez sélectionner un fichier CSV');
+      showNotification('Veuillez sélectionner un fichier CSV', 'error');
     }
   };
 
@@ -102,15 +127,16 @@ const LocauxPage = () => {
           id: formData.id,
           ...formData
         }).unwrap();
+        showNotification('Local modifié avec succès');
       } else {
         await createLocal(formData).unwrap();
+        showNotification('Local ajouté avec succès');
       }
       setShowForm(false);
       resetForm();
-      alert(formData.id ? 'Local modifié avec succès' : 'Local ajouté avec succès');
     } catch (error) {
       console.error('Failed to save local:', error);
-      alert('Erreur lors de la sauvegarde du local');
+      showNotification('Erreur lors de la sauvegarde du local', 'error');
     }
   };
 
@@ -126,15 +152,20 @@ const LocauxPage = () => {
     setShowForm(true);
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce local ?')) {
-      try {
-        await deleteLocal(id).unwrap();
-        alert('Local supprimé avec succès');
-      } catch (error) {
-        console.error('Failed to delete local:', error);
-        alert('Erreur lors de la suppression du local');
-      }
+  const handleDelete = (id) => {
+    setLocalToDelete(id);
+    setShowDeleteDialog(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      await deleteLocal(localToDelete).unwrap();
+      setShowDeleteDialog(false);
+      setLocalToDelete(null);
+      showNotification('Local supprimé avec succès');
+    } catch (error) {
+      console.error('Failed to delete local:', error);
+      showNotification('Erreur lors de la suppression du local', 'error');
     }
   };
 
@@ -216,7 +247,7 @@ const LocauxPage = () => {
                 <td className="p-3">{local.estDisponible ? '✓' : '✗'}</td>
                 <td className="p-3 space-x-2">
                   <button
-                    className="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                    className="text-blue-600 hover:text-blue-800"
                     onClick={() => handleEdit(local)}
                   >
                     Modifier
@@ -297,6 +328,56 @@ const LocauxPage = () => {
               >
                 Enregistrer
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dialog de confirmation de suppression */}
+      {showDeleteDialog && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center">
+          <div className="fixed inset-0 bg-gray-800 bg-opacity-50 z-[9999]"></div>
+          <div className="relative z-[10000] bg-white p-6 rounded shadow-lg w-96">
+            <h2 className="text-xl font-bold mb-4">Confirmer la suppression</h2>
+            <p className="mb-6">Êtes-vous sûr de vouloir supprimer ce local ? Cette action ne peut pas être annulée.</p>
+            <div className="flex justify-end gap-4">
+              <button
+                className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 transition-colors duration-200"
+                onClick={() => {
+                  setShowDeleteDialog(false);
+                  setLocalToDelete(null);
+                }}
+              >
+                Annuler
+              </button>
+              <button
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors duration-200"
+                onClick={handleConfirmDelete}
+              >
+                Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notification Toast */}
+      {notification.show && (
+        <div className="fixed bottom-4 right-4 z-[10000] animate-fade-in-up">
+          <div 
+            className={`rounded-lg shadow-lg p-4 ${
+              notification.type === 'success' 
+                ? 'bg-green-50 text-green-800 border border-green-200' 
+                : 'bg-red-50 text-red-800 border border-red-200'
+            }`}
+          >
+            <div className="flex items-center">
+              <span className={`mr-2 text-2xl ${
+                notification.type === 'success' ? 'text-green-500' : 'text-red-500'
+              }`}>
+                {notification.type === 'success' ? '✓' : '✕'}
+              </span>
+              <p className="font-medium">{notification.message}</p>
             </div>
           </div>
         </div>

@@ -124,36 +124,40 @@ const DepartmentsPage = () => {
         </div>
       </div>
 
-      <div className="space-y-2 border rounded p-2">
-        {departments.map((dept) => (
-          <div
-            key={dept.id}
-            className="p-2 flex justify-between items-center hover:bg-gray-50"
-          >
-            <span
-              className="text-blue-600 underline cursor-pointer"
-              onClick={() => handleDepartmentClick(dept)}
-            >
-              {dept.nom}
-            </span>
+     {/* Conteneur principal avec ombre et bordure arrondie */}
+<div className="bg-white rounded-lg shadow-md p-4">
+  {/* Liste des départements avec espacement */}
+  <div className="space-y-3">
+    {departments.map((dept) => (
+      <div
+        key={dept.id}
+        className="bg-gray-50 rounded-lg p-4 flex justify-between items-center hover:bg-gray-100 transition-colors duration-200 border border-gray-100"
+      >
+        <span
+          className="text-blue-600 underline cursor-pointer font-medium"
+          onClick={() => handleDepartmentClick(dept)}
+        >
+          {dept.nom}
+        </span>
 
-            <div className="flex gap-2">
-              <button
-                onClick={() => handleEdit(dept)}
-                className="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
-              >
-                Modifier
-              </button>
-              <button
-                onClick={() => handleDelete(dept.id)}
-                className="px-3 py-1 bg-red-100 text-red-600 rounded hover:bg-red-200"
-              >
-                Supprimer
-              </button>
-            </div>
-          </div>
-        ))}
+        <div className="flex gap-2">
+          <button
+            onClick={() => handleEdit(dept)}
+            className="text-blue-600 hover:text-blue-800"
+          >
+            Modifier
+          </button>
+          <button
+            onClick={() => handleDelete(dept.id)}
+            className="px-3 py-1 bg-red-100 text-red-600 rounded hover:bg-red-200"
+          >
+            Supprimer
+          </button>
+        </div>
       </div>
+    ))}
+  </div>
+</div>
 
       <DepartmentManager
         isOpen={isModalOpen}
