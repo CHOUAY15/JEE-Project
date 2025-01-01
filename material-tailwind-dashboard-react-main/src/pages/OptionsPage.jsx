@@ -8,6 +8,8 @@ import {
   useDeleteOptionMutation,
   useImportOptionsMutation
 } from "../features/options/optionSlice";
+import { useGetDepartmentsQuery } from "../features/department/departmentSlice";
+
 import OptionsTable from "../components/option/OptionsTable";
 import AddModal from "../components/option/AddModal";
 import EditModal from "../components/option/EditModal";
@@ -33,6 +35,8 @@ export default function OptionsPage() {
     nombreEtudiant: 0,
     modules: []
   });
+  
+  const { data: departments = [] } = useGetDepartmentsQuery();
   
   const [editOption1, setEditOption1] = useState({
     id: "",
@@ -115,6 +119,7 @@ export default function OptionsPage() {
             nomOption: row.nomOption || '',
             niveauAnnee: row.niveauAnnee || '',
             nombreEtudiant: parseInt(row.nombreEtudiant) || 0,
+            departementId:row.departementId || '',
             modules: []
           }));
           
@@ -207,6 +212,8 @@ export default function OptionsPage() {
               setNewOption={setNewOption}
               onClose={() => setIsAddModalOpen(false)}
               onAdd={handleAddOption}
+              departments={departments} // Ajoutez cette prop
+
             />
           </div>
         </div>

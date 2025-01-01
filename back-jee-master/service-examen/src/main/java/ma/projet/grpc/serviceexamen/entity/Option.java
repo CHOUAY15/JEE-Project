@@ -4,11 +4,14 @@ package ma.projet.grpc.serviceexamen.entity;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@Entity
+@Entity@Data@AllArgsConstructor
 public class Option {
 
     // Attributes
@@ -25,6 +28,9 @@ public class Option {
     @Column(nullable = false)
     private String niveauAnnee;
 
+
+    @Column(name = "departement_id")
+    private Long departementId;
     @JsonManagedReference
     @OneToMany(mappedBy = "option", cascade = CascadeType.ALL)
     private List<Module> modules = new ArrayList<>();  // Initialisez la liste ici
@@ -33,12 +39,24 @@ public class Option {
     public Option() {
     }
 
-    public Option(String nomOption, int nombreEtudiant, String niveauAnnee, List<Module> modules) {
+    public Option(String nomOption, int nombreEtudiant, String niveauAnnee, List<Module> modules, Long departementId) {
         this.nomOption = nomOption;
         this.nombreEtudiant = nombreEtudiant;
         this.niveauAnnee = niveauAnnee;
         this.modules = modules;
+        this.departementId = departementId;
     }
+
+    // Add getters and setters for new fields
+    public Long getDepartementId() {
+        return departementId;
+    }
+
+    public void setDepartementId(Long departementId) {
+        this.departementId = departementId;
+    }
+
+
 
     // Getters and Setters
     public Long getId() {

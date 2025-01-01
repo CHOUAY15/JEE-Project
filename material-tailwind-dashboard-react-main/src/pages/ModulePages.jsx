@@ -112,6 +112,12 @@ useEffect(() => {
     }
   };
 
+  useEffect(() => {
+    if (option?.departementId) {
+      setSelectedDepartmentId(option.departementId);
+    }
+  }, [option]);
+
   const handleDeleteModule = async () => {
     if (!moduleToDelete?.id) return;
 
@@ -201,86 +207,65 @@ useEffect(() => {
 
       {/* Add Module Dialog */}
       {showAddDialog && (
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
-        <div className="bg-white p-6 rounded-lg w-96">
-          <h2 className="text-lg font-bold mb-4">Ajouter un module</h2>
-          <form onSubmit={handleAddModule}>
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">
-                Nom du module
-              </label>
-              <input
-                type="text"
-                value={formData.nom}
-                onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-                required
-              />
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">
-                Département
-              </label>
-              <select
-                value={formData.departementId}
-                onChange={(e) => {
-                  setFormData({ ...formData, departementId: e.target.value, responsableNom: "" });
-                  setSelectedDepartmentId(e.target.value);
-                }}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-                required
-              >
-                <option value="">Sélectionnez un département</option>
-                {departments.map(dept => (
-                  <option key={dept.id} value={dept.id}>{dept.nom}</option>
-                ))}
-              </select>
-            </div>
-            
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">
-                Responsable
-              </label>
-              <select
-                value={formData.responsableNom}
-                onChange={(e) => setFormData({ ...formData, responsableNom: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-                required
-                disabled={!formData.departementId}
-              >
-                <option value="">Sélectionnez un responsable</option>
-                {teachers.map(teacher => (
-                  <option key={teacher.id} value={teacher.nom}>
-                    {teacher.nom} {teacher.prenom}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex justify-between mt-6">
-              <button
-                type="button"
-                onClick={() => setShowAddDialog(false)}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
-              >
-                Annuler
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
-              >
-                Ajouter
-              </button>
-            </div>
-          </form>
+  <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
+    <div className="bg-white p-6 rounded-lg w-96">
+      <h2 className="text-lg font-bold mb-4">Ajouter un module</h2>
+      <form onSubmit={handleAddModule}>
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-1">
+            Nom du module
+          </label>
+          <input
+            type="text"
+            value={formData.nom}
+            onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
+            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+            required
+          />
         </div>
-      </div>
-    )}
+        
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-1">
+            Responsable
+          </label>
+          <select
+            value={formData.responsableNom}
+            onChange={(e) => setFormData({ ...formData, responsableNom: e.target.value })}
+            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+            required
+          >
+            <option value="">Sélectionnez un responsable</option>
+            {teachers.map(teacher => (
+              <option key={teacher.id} value={teacher.nom}>
+                {teacher.nom} {teacher.prenom}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex justify-between mt-6">
+          <button
+            type="button"
+            onClick={() => setShowAddDialog(false)}
+            className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
+          >
+            Annuler
+          </button>
+          <button
+            type="submit"
+            className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
+          >
+            Ajouter
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
 
       {/* Edit Module Dialog */}
      {/* Edit Module Dialog */}
-{showEditDialog && (
+     {showEditDialog && (
   <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
     <div className="bg-white p-6 rounded-lg w-96">
       <h2 className="text-lg font-bold mb-4">Modifier un module</h2>
@@ -300,27 +285,6 @@ useEffect(() => {
 
         <div className="mb-4">
           <label className="block text-sm font-medium mb-1">
-            Département
-          </label>
-          <select
-            value={editModuleData.departementId || ''}
-            onChange={(e) => {
-              const deptId = e.target.value;
-              setEditModuleData({ ...editModuleData, departementId: deptId, responsableId: '' });
-              setSelectedDepartmentId(deptId);
-            }}
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-            required
-          >
-            <option value="">Sélectionnez un département</option>
-            {departments.map(dept => (
-              <option key={dept.id} value={dept.id}>{dept.nom}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-1">
             Responsable
           </label>
           <select
@@ -328,7 +292,6 @@ useEffect(() => {
             onChange={(e) => setEditModuleData({ ...editModuleData, responsableId: e.target.value })}
             className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
             required
-            disabled={!editModuleData.departementId}
           >
             <option value="">Sélectionnez un responsable</option>
             {teachers.map(teacher => (
