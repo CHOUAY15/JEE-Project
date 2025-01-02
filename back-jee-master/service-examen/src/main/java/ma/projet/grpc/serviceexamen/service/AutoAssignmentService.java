@@ -1,7 +1,9 @@
+/*
 package ma.projet.grpc.serviceexamen.service;
 
 import jakarta.transaction.Transactional;
-import ma.projet.grpc.servicedepartement.entity.Local;
+
+import ma.projet.grpc.serviceexamen.dto.Local;
 import ma.projet.grpc.serviceexamen.entity.Examen;
 import ma.projet.grpc.serviceexamen.entity.Session;
 import ma.projet.grpc.serviceexamen.entity.SurveillanceAssignation;
@@ -104,4 +106,4 @@ public class AutoAssignmentService {
         surveillanceRepository.saveAll(newAssignations);
     }
 
-}
+}*/
