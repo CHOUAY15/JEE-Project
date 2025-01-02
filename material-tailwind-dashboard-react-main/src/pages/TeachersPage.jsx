@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useSelector , useDispatch} from 'react-redux';
+
 import { 
   useGetDepartmentTeachersQuery,
   useCreateTeacherMutation,
@@ -8,19 +10,20 @@ import {
 } from '../features/teacher/teacherSlice';
 import { useGetDepartmentsQuery } from '../features/department/departmentSlice';
 import { ArrowLeft } from "lucide-react";
+import { TeacherCalendar } from './TeacherCalendar';
 
 const TeachersPage = () => {
   const { departmentId } = useParams();
   const navigate = useNavigate();
   const { data: departments = [] } = useGetDepartmentsQuery();
+  const selectedSession = useSelector(state => state.exams.selectedSession);
+
+  // État pour gérer l'affichage du calendrier
+  const [selectedTeacher, setSelectedTeacher] = useState(null);
+  const [showCalendar, setShowCalendar] = useState(false);
 
   // Convertir l'ID en nombre pour la comparaison
   const department = departments.find(d => d.id === Number(departmentId));
-  console.log({
-    departmentId,
-    departments,
-    foundDepartment: department
-  }); 
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { data: teachers = [], isLoading } = useGetDepartmentTeachersQuery(departmentId);
@@ -37,36 +40,36 @@ const TeachersPage = () => {
     nbSurveillances: 0
   });
 
- // Modification pour la création d'un enseignant
-const handleSubmit = async (e) => {
-  e.preventDefault();
-    
-  try {
-    const teacherData = {
-      nom: formData.nom,
-      prenom: formData.prenom,
-      email: formData.email,
-      estDispense: formData.estDispense,
-      nbSurveillances: 0
-    };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+      
+    try {
+      const teacherData = {
+        nom: formData.nom,
+        prenom: formData.prenom,
+        email: formData.email,
+        estDispense: formData.estDispense,
+        nbSurveillances: 0
+      };
 
-    if (editingTeacher) {
-      await updateTeacher({ 
-        id: editingTeacher.id,
-        ...teacherData
-      }).unwrap();
-    } else {
-      await createTeacher({
-        departmentId: Number(departmentId),
-        teacher: teacherData
-      }).unwrap();
+      if (editingTeacher) {
+        await updateTeacher({ 
+          id: editingTeacher.id,
+          ...teacherData
+        }).unwrap();
+      } else {
+        await createTeacher({
+          departmentId: Number(departmentId),
+          teacher: teacherData
+        }).unwrap();
+      }
+      setIsModalOpen(false);
+      resetForm();
+    } catch (error) {
+      console.error('Failed to save teacher:', error);
     }
-    setIsModalOpen(false);
-    resetForm();
-  } catch (error) {
-    console.error('Failed to save teacher:', error);
-  }
-};
+  };
+
   // Si le département n'est pas trouvé, afficher un message d'erreur
   if (!department) {
     return (
@@ -107,6 +110,11 @@ const handleSubmit = async (e) => {
     setIsModalOpen(true);
   };
 
+  const handleTeacherClick = (teacher) => {
+    setSelectedTeacher(teacher);
+    setShowCalendar(true);
+  };
+
   const resetForm = () => {
     setEditingTeacher(null);
     setFormData({
@@ -120,6 +128,31 @@ const handleSubmit = async (e) => {
 
   if (isLoading) {
     return <div>Chargement...</div>;
+  }
+
+  if (showCalendar && selectedTeacher) {
+    return (
+      <div className="p-4 space-y-4">
+        <div className="flex items-center space-x-4 mb-6">
+          <button
+            onClick={() => setShowCalendar(false)}
+            className="p-2 hover:bg-gray-100 rounded-full"
+          >
+            <ArrowLeft className="h-6 w-6" />
+          </button>
+          <h1 className="text-2xl font-bold">
+            Occupations de {selectedTeacher.prenom} {selectedTeacher.nom}
+          </h1>
+        </div>
+        
+        {selectedSession && (
+          <TeacherCalendar 
+            sessionData={selectedSession} 
+            teacherId={selectedTeacher.id} 
+          />
+        )}
+      </div>
+    );
   }
 
   return (
@@ -147,43 +180,53 @@ const handleSubmit = async (e) => {
         </button>
       </div>
 
-      <table className="w-full border-collapse">
-        <thead>
-          <tr className="border-b">
-            <th className="p-2 text-left">Nom</th>
-            <th className="p-2 text-left">Prénom</th>
-            <th className="p-2 text-left">Email</th>
-            <th className="p-2 text-left">Dispensé</th>
-           
-            <th className="p-2 text-left">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {teachers.map((teacher) => (
-            <tr key={teacher.id} className="border-b hover:bg-gray-100">
-              <td className="p-2">{teacher.nom}</td>
-              <td className="p-2">{teacher.prenom}</td>
-              <td className="p-2">{teacher.email}</td>
-              <td className="p-2">{teacher.estDispense ? '✓' : '✗'}</td>
-             
-              <td className="p-2">
-                <button
-                  onClick={() => handleEditClick(teacher)}
-                  className="bg-blue-500 text-white py-1 px-2 rounded hover:bg-blue-700 mr-2"
-                >
-                  Modifier
-                </button>
-                <button
-                  onClick={() => handleDeleteClick(teacher.id)}
-                  className="bg-red-500 text-white py-1 px-2 rounded hover:bg-red-700"
-                >
-                  Supprimer
-                </button>
-              </td>
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="border-b">
+              <th className="p-2 text-left">Nom</th>
+              <th className="p-2 text-left">Prénom</th>
+              <th className="p-2 text-left">Email</th>
+              <th className="p-2 text-left">Dispensé</th>
+              <th className="p-2 text-left">Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {teachers.map((teacher) => (
+              <tr 
+                key={teacher.id} 
+                className="border-b hover:bg-gray-100 cursor-pointer"
+                onClick={() => handleTeacherClick(teacher)}
+              >
+                <td className="p-2">{teacher.nom}</td>
+                <td className="p-2">{teacher.prenom}</td>
+                <td className="p-2">{teacher.email}</td>
+                <td className="p-2">{teacher.estDispense ? '✓' : '✗'}</td>
+                <td className="p-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditClick(teacher);
+                    }}
+                    className="bg-blue-500 text-white py-1 px-2 rounded hover:bg-blue-700 mr-2"
+                  >
+                    Modifier
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteClick(teacher.id);
+                    }}
+                    className="bg-red-500 text-white py-1 px-2 rounded hover:bg-red-700"
+                  >
+                    Supprimer
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

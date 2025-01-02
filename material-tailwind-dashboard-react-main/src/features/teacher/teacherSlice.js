@@ -39,7 +39,27 @@ export const teacherApi = createApi({
         method: 'DELETE'
       }),
       invalidatesTags: ['Teacher']
-    })
+    }),
+     // Endpoint to get teacher's dispenses by teacherId
+     getTeacherDispenses: builder.query({
+      query: (teacherId) => `/enseignants/enseignants/${teacherId}/dispenses`,  // Adjust according to your backend API
+      providesTags: ['Dispense']
+    }),
+    // Endpoint to delete a dispense by dispenseId
+    deleteTeacherDispense: builder.mutation({
+      query: ({ teacherId, dispenseId }) => ({
+        url: `/enseignants/enseignants/${teacherId}/dispenses/${dispenseId}`,
+        method: 'DELETE'
+      }),
+      invalidatesTags: ['Dispense']
+    }),
+    createTeacherDispense: builder.mutation({
+      query: ({ teacherId, dispenseData }) => ({
+        url: `/enseignants/enseignants/${teacherId}/dispenses`, // URL de l'endpoint
+        method: 'POST',
+        body: dispenseData,
+      }),
+    }),
   })
 });
 
@@ -48,5 +68,8 @@ export const {
   useCreateTeacherMutation,
   useUpdateTeacherMutation,
   useDeleteTeacherMutation,
-  useGetAllTeachersQuery
+  useGetAllTeachersQuery,
+  useGetTeacherDispensesQuery,  // Hook for fetching dispenses
+  useDeleteTeacherDispenseMutation,
+  useCreateTeacherDispenseMutation // Hook for deleting dispense
 } = teacherApi;
