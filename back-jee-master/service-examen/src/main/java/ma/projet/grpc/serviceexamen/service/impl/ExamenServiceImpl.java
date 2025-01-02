@@ -1,9 +1,7 @@
 package ma.projet.grpc.serviceexamen.service.impl;
 import java.util.stream.Collectors;
 
-import ma.projet.grpc.servicedepartement.entity.Local;
-import ma.projet.grpc.servicedepartement.repository.LocalRepository;
-import ma.projet.grpc.serviceexamen.dto.ExamenResponse;
+
 import ma.projet.grpc.serviceexamen.entity.Examen;
 import ma.projet.grpc.serviceexamen.feignClients.LocalClient;
 import ma.projet.grpc.serviceexamen.repository.ExamenRepository;

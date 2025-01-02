@@ -1,7 +1,7 @@
 package ma.projet.grpc.serviceexamen.repository;
 
 import feign.Param;
-import ma.projet.grpc.servicedepartement.entity.Enseignant;
+
 import ma.projet.grpc.serviceexamen.entity.Session;
 import ma.projet.grpc.serviceexamen.entity.SurveillanceAssignation;
 import org.springframework.data.jpa.repository.JpaRepository;

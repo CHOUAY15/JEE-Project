@@ -8,7 +8,7 @@ import ma.projet.grpc.serviceexamen.entity.Examen;
 import ma.projet.grpc.serviceexamen.entity.Session;
 import ma.projet.grpc.serviceexamen.entity.SurveillanceAssignation;
 import ma.projet.grpc.serviceexamen.repository.SurveillanceAssignationRepository;
-import ma.projet.grpc.serviceexamen.service.AutoAssignmentService;
+//import ma.projet.grpc.serviceexamen.service.AutoAssignmentService;
 import ma.projet.grpc.serviceexamen.service.ExamenService;
 import ma.projet.grpc.serviceexamen.service.SessionService;
 import ma.projet.grpc.serviceexamen.service.SurveillanceService;
@@ -32,8 +32,8 @@ public class SurveillanceController {
     @Autowired
     private SurveillanceAssignationRepository surveillanceAssignationRepository;
 
-    @Autowired
-    private AutoAssignmentService autoAssignmentService;
+//    @Autowired
+//    private AutoAssignmentService autoAssignmentService;
 
     @Autowired
     private SurveillanceService surveillanceService;
@@ -145,18 +145,18 @@ public class SurveillanceController {
 
 
 
-    // Ajouter cet endpoint
-    @PostMapping("/auto-assign")
-    public ResponseEntity<?> autoAssignSurveillances(
-            @RequestParam Long sessionId) {
-        try {
-            autoAssignmentService.autoAssignSurveillances(sessionId);
-            return ResponseEntity.ok().build();
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("error", e.getMessage()));
-        }
-    }
+//    // Ajouter cet endpoint
+//    @PostMapping("/auto-assign")
+//    public ResponseEntity<?> autoAssignSurveillances(
+//            @RequestParam Long sessionId) {
+//        try {
+//            autoAssignmentService.autoAssignSurveillances(sessionId);
+//            return ResponseEntity.ok().build();
+//        } catch (Exception e) {
+//            return ResponseEntity.internalServerError()
+//                    .body(Map.of("error", e.getMessage()));
+//        }
+//    }
 
     @GetMapping("/examensresponse")
     public ResponseEntity<List<ExamenResponse>> getExamensRes(

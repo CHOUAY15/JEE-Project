@@ -1,0 +1,95 @@
+version: "3.8"
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-jee
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=jee_project_first
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=password
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/data/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "3306:3306"
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin-jee
+    ports:
+      - "8089:80"
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+
+  config-service:
+    build:
+      context: ./service-config
+      dockerfile: Dockerfile
+    container_name: config-service
+    ports:
+      - "8089:8089"
+    depends_on:
+      - discovery-service
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
+
+  discovery-service:
+    build:
+      context: ./service-register
+      dockerfile: Dockerfile
+    container_name: discovery-service
+    ports:
+      - "8761:8761"
+
+  gateway-service:
+    build:
+      context: ./server-gateway
+      dockerfile: Dockerfile
+    container_name: gateway-service
+    ports:
+      - "8888:8888"
+    depends_on:
+      - discovery-service
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
+
+  department-service:
+    build:
+      context: ./service-departement
+      dockerfile: Dockerfile
+    container_name: department-service
+    ports:
+      - "9090:9090"
+    depends_on:
+      - mysql
+      - discovery-service
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/jee_project_first
+      - SPRING_DATASOURCE_USERNAME=user
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.MySQL8Dialect
+
+  examen-service:
+    build:
+      context: ./service-examen
+      dockerfile: Dockerfile
+    container_name: examen-service
+    ports:
+      - "9091:9091"
+    depends_on:
+      - mysql
+      - discovery-service
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/jee_project_second
+      - SPRING_DATASOURCE_USERNAME=user
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.MySQL8Dialect
+
+volumes:
+  mysql_data:
