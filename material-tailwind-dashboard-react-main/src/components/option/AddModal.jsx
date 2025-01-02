@@ -1,5 +1,6 @@
 // AddModal.jsx
-export default function AddModal({ newOption, setNewOption, onClose, onAdd }) {
+// AddModal.jsx
+export default function AddModal({ newOption, setNewOption, onClose, onAdd, departments }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
       <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
@@ -18,6 +19,23 @@ export default function AddModal({ newOption, setNewOption, onClose, onAdd }) {
               required
             />
           </div>
+          
+          {/* Ajout de la sélection du département */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Département</label>
+            <select
+              value={newOption.departementId || ""}
+              onChange={(e) => setNewOption({ ...newOption, departementId: e.target.value })}
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+              required
+            >
+              <option value="">Sélectionnez un département</option>
+              {departments.map(dept => (
+                <option key={dept.id} value={dept.id}>{dept.nom}</option>
+              ))}
+            </select>
+          </div>
+
           <div className="mb-4">
             <label className="block text-sm font-medium mb-1">Niveau d'année</label>
             <select

@@ -24,7 +24,7 @@ public class Departement {
     @NotBlank(message = "Le nom du département est obligatoire")
     private String nom;
     @OneToMany(mappedBy = "departement", cascade = CascadeType.ALL)
-   @JsonManagedReference
+    @JsonManagedReference
     private List<Enseignant> enseignants = new ArrayList<>();
 
     public Long getId() {
