@@ -2,167 +2,250 @@ import React, { useEffect, useState } from "react";
 import { Typography } from "@material-tailwind/react";
 import { StatisticsChart } from "@/widgets/charts";
 import { ClockIcon } from "@heroicons/react/24/solid";
-
 import { useSelector } from "react-redux";
-
 import {
   Card,
   CardHeader,
   CardBody,
 } from "@material-tailwind/react";
-import {
-  ArrowUpIcon,
-} from "@heroicons/react/24/outline";
 import { StatisticsCard } from "@/widgets/cards";
-
-import {
-  statisticsCardsData,
-} from "@/data";
+import { statisticsCardsData } from "@/data";
 
 export function Home() {
   const selectedSession = useSelector((state) => state.exams.selectedSession);
   const sessionId = selectedSession?.sessionId;
-  
-  const [examCount, setExamCount] = useState(null);
-  const [teacherCount, setTeacherCount] = useState(null);
-  const [departmentCount, setDepartmentCount] = useState(null);
+
+  const [examCount, setExamCount] = useState(0);
+  const [teacherCount, setTeacherCount] = useState(0);
+  const [departmentCount, setDepartmentCount] = useState(0);
+  const [optiontCount, setOptionCount] = useState(0);
   const [departments, setDepartments] = useState([]);
   const [chartData, setChartData] = useState({
-    categories: [],
-    data: []
+    categories: ['Chargement...'],
+    data: [0]
   });
 
-  // Fetch department data and chart data
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
     const fetchDepartmentData = async () => {
+      setIsLoading(true);
       try {
         const response = await fetch("http://localhost:8888/SERVICE-DEPARTEMENT/departements");
         const data = await response.json();
-        setDepartments(data);
-
-        // Prepare chart data
-        const categories = data.map(department => department.nom);
-        const dataCounts = data.map(department => department.enseignants.length);
-        setChartData({
-          categories,
-          data: dataCounts
-        });
-        setDepartmentCount(data.length);
+        
+        if (Array.isArray(data)) {
+          setDepartments(data);
+          
+          const categories = data.map(department => department.nom || 'Sans nom');
+          const dataCounts = data.map(department => 
+            Array.isArray(department.enseignants) ? 
+            department.enseignants.filter(e => e !== null && e !== undefined).length : 0
+          );
+          
+          setChartData({
+            categories: categories.length > 0 ? categories : ['Aucune donnée'],
+            data: dataCounts.length > 0 ? dataCounts : [0]
+          });
+          setDepartmentCount(data.length);
+        } else {
+          setChartData({
+            categories: ['Aucune donnée'],
+            data: [0]
+          });
+          setDepartments([]);
+          setDepartmentCount(0);
+        }
       } catch (error) {
-        console.error("Error fetching department data:", error);
+        console.error("Erreur lors de la récupération des données des départements:", error);
+        setChartData({
+          categories: ['Erreur de chargement'],
+          data: [0]
+        });
+        setDepartments([]);
+        setDepartmentCount(0);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchDepartmentData();
   }, []);
 
-  // Fetch exam count filtered by sessionId
   useEffect(() => {
     const fetchExamCount = async () => {
-      if (!sessionId) return;
+      if (!sessionId) {
+        setExamCount(0);
+        return;
+      }
       try {
         const response = await fetch("http://localhost:8888/SERVICE-EXAMEN/api/examens");
         const data = await response.json();
-        
-        const filteredExams = data.filter((exam) => {
-          console.log(exam); // Log each exam
-          return exam.session.id === sessionId; // Return the filtering condition
-        });
-        
-        setExamCount(filteredExams.length);
+        if (Array.isArray(data)) {
+          const filteredExams = data.filter((exam) => exam.session?.id === sessionId);
+          setExamCount(filteredExams.length);
+        } else {
+          setExamCount(0);
+        }
       } catch (error) {
-        console.error("Error fetching exam data:", error);
+        console.error("Erreur lors de la récupération des données d'examen:", error);
+        setExamCount(0);
       }
     };
 
     fetchExamCount();
   }, [sessionId]);
+  useEffect(() => {
+    const fetchOptionCount = async () => {
+      if (!sessionId) {
+        setOptionCount(0);
+        return;
+      }
+      try {
+        const response = await fetch("http://localhost:8888/SERVICE-EXAMEN/api/options");
+        const data = await response.json();
+        setOptionCount(data.length);
+  
+      } catch (error) {
+        console.error("Erreur lors de la récupération des données d'options:", error);
+        setExamCount(0);
+      }
+    };
+  
+    fetchOptionCount(); // Corrected function name
+  }, [sessionId]);
+  
 
-  // Fetch teacher count
   useEffect(() => {
     const fetchTeacherCount = async () => {
       try {
         const response = await fetch("http://localhost:8888/SERVICE-DEPARTEMENT/enseignants");
         const data = await response.json();
-        setTeacherCount(data.length);
+        if (Array.isArray(data)) {
+          setTeacherCount(data.length);
+        } else {
+          setTeacherCount(0);
+        }
       } catch (error) {
-        console.error("Error fetching teacher data:", error);
+        console.error("Erreur lors de la récupération des données des enseignants:", error);
+        setTeacherCount(0);
       }
     };
 
     fetchTeacherCount();
   }, []);
 
-  // Update the cards dynamically based on fetched data
   const updatedStatisticsCardsData = statisticsCardsData.map((card) => {
-    if (card.title === "Exams" && examCount !== null) {
-      return {
-        ...card,
-        value: examCount.toString(),
-      };
+    let value = "0";
+    switch (card.title) {
+      case "Exams":
+        value = examCount.toString();
+        break;
+      case "Enseignants":
+        value = teacherCount.toString();
+        break;
+      case "Départements":
+        value = departmentCount.toString();
+        break;
+        case "Options":
+          value = optiontCount.toString();
+          break;
+      default:
+        value = card.value;
     }
-    if (card.title === "Enseignants" && teacherCount !== null) {
-      return {
-        ...card,
-        value: teacherCount.toString(),
-      };
-    }
-    if (card.title === "Nombre total de départements" && departmentCount !== null) {
-      return {
-        ...card,
-        value: departmentCount.toString(),
-      };
-    }
-    return card;
+    return {
+      ...card,
+      value
+    };
   });
 
   const departmentTeacherChart = {
-    type: "bar",
-    height: 220,
-    series: [
-      {
-        name: "Enseignants",
-        data: chartData.data,
-      },
-    ],
+    type: "donut",
+    height: 350,
+    series: chartData?.data?.length ? chartData.data : [0],
     options: {
       chart: {
-        background: '#f7fafc',
-        toolbar: { show: false },
+        background: '#f8fafc',
+        type: 'donut',
+        fontFamily: 'Inter, sans-serif',
+        animations: {
+          enabled: true,
+          easing: 'easeinout',
+          speed: 800,
+          animateGradually: {
+            enabled: true,
+            delay: 150
+          },
+          dynamicAnimation: {
+            enabled: true,
+            speed: 350
+          }
+        }
       },
-      colors: ["#FF6347"],
+      colors: ['#3b82f6', '#60a5fa', '#93c5fd', '#2563eb', '#1d4ed8', '#2563eb', '#3b82f6', '#60a5fa'],
+      labels: chartData?.categories?.length ? chartData.categories : ['Aucune donnée'],
       plotOptions: {
-        bar: { columnWidth: "40%", borderRadius: 8 },
+        pie: {
+          donut: {
+            size: '75%',
+            labels: {
+              show: true,
+              total: {
+                show: true,
+                label: 'Total Enseignants',
+                formatter: function (w) {
+                  return (w.globals.seriesTotals || []).reduce((a, b) => a + b, 0);
+                }
+              }
+            }
+          },
+          expandOnClick: true
+        }
       },
-      grid: {
-        show: true,
-        borderColor: "#e0e0e0",
-        strokeDashArray: 4,
-        xaxis: { lines: { show: true } },
-        yaxis: { lines: { show: true } },
+      dataLabels: {
+        enabled: true,
+        formatter: function (val, opts) {
+          const label = opts.w.globals.labels?.[opts.seriesIndex] || 'N/A';
+          const value = opts.w.globals.series?.[opts.seriesIndex] || 0;
+          return `${label}: ${value}`;
+        }
       },
-      xaxis: {
-        categories: chartData.categories,
-        title: { text: "Départements", style: { color: "#757575", fontSize: "14px" } },
-        labels: { style: { colors: "#9e9e9e" } },
-      },
-      yaxis: {
-        title: { text: "Nombre d'enseignants", style: { color: "#757575", fontSize: "14px" } },
-        labels: { style: { colors: "#9e9e9e" } },
+      legend: {
+        position: 'bottom',
+        horizontalAlign: 'center',
+        fontSize: '14px',
+        markers: {
+          width: 12,
+          height: 12,
+          radius: 6
+        },
+        itemMargin: {
+          horizontal: 10,
+          vertical: 5
+        }
       },
       tooltip: {
         enabled: true,
-        theme: "dark",
-        y: { formatter: (value) => `${value} enseignants` },
+        theme: 'dark',
+        y: {
+          formatter: (value) => `${value} enseignants`
+        },
+        style: {
+          fontSize: '14px'
+        }
       },
-      legend: {
-        position: "top",
-        horizontalAlign: "center",
-        floating: true,
-        fontSize: "14px",
-        labels: { colors: "#757575" },
-      },
-    },
+      responsive: [{
+        breakpoint: 480,
+        options: {
+          chart: {
+            height: 300
+          },
+          legend: {
+            position: 'bottom'
+          }
+        }
+      }]
+    }
   };
 
   return (
@@ -173,7 +256,9 @@ export function Home() {
             key={title}
             {...rest}
             title={title}
-            icon={React.createElement(icon, { className: "w-6 h-6 text-white" })}
+            icon={React.createElement(icon, {
+              className: "w-6 h-6 text-white"
+            })}
             footer={
               <Typography className="font-normal text-blue-gray-600">
                 <strong className={footer.color}>{footer.value}</strong>
@@ -184,21 +269,126 @@ export function Home() {
         ))}
       </div>
 
-      <div className="mb-6 grid grid-cols-1 gap-y-12 gap-x-6 md:grid-cols-1">
-        <StatisticsChart
-          key="Department Teachers Count"
-          title="Nombre d'enseignants par département"
-          chart={departmentTeacherChart}
-          footer={
-            <Typography variant="small" className="flex items-center font-normal text-blue-gray-600">
-              <ClockIcon strokeWidth={2} className="h-4 w-4 text-blue-gray-400" />
-              &nbsp;Données mises à jour récemment
+      <div className="grid grid-cols-1 gap-6 mb-6 lg:grid-cols-2">
+        <Card className="h-full">
+          <CardHeader variant="gradient" color="blue" className="p-4">
+            <Typography variant="h6" color="white">
+              Distribution des Enseignants
             </Typography>
-          }
-        />
+          </CardHeader>
+          <CardBody>
+            {!isLoading ? (
+              <StatisticsChart
+                key={`Department-Teachers-Count-${departments.length}-${Date.now()}`}
+                chart={departmentTeacherChart}
+                description="Distribution des enseignants par département"
+                footer={
+                  <Typography variant="small" className="flex items-center justify-center font-normal text-blue-gray-600 mt-4">
+                    <ClockIcon strokeWidth={2} className="h-4 w-4 text-blue-gray-400 mr-1" />
+                    {`Mise à jour le ${new Date().toLocaleDateString()}`}
+                  </Typography>
+                }
+              />
+            ) : (
+              <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+              </div>
+            )}
+          </CardBody>
+        </Card>
+
+        <Card className="h-full">
+          <CardHeader variant="gradient" color="blue" className="p-4">
+            <Typography variant="h6" color="white">
+              Détails des Départements
+            </Typography>
+          </CardHeader>
+          <CardBody className="overflow-x-auto px-0">
+            <table className="w-full min-w-[640px] table-auto">
+              <thead>
+                <tr>
+                  {["Département", "Total Enseignants", "Enseignants Non Dispensés", "% Non Dispensés", "Status"].map((el) => (
+                    <th key={el} className="border-b border-blue-gray-50 py-3 px-6 text-left">
+                      <Typography
+                        variant="small"
+                        className="text-[11px] font-medium uppercase text-blue-gray-400"
+                      >
+                        {el || ''}
+                      </Typography>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {departments.map(({ nom, enseignants }, key) => {
+                  const className = `py-3 px-6 ${
+                    key === departments.length - 1 ? "" : "border-b border-blue-gray-50"
+                  }`;
+
+                  const totalEnseignants = Array.isArray(enseignants) ? enseignants.length : 0;
+                  
+                  const nonDispensedCount = Array.isArray(enseignants) 
+                    ? enseignants.filter(ens => ens?.estDispense === false).length 
+                    : 0;
+
+                  const departmentRatio = totalEnseignants > 0
+                    ? ((nonDispensedCount / totalEnseignants) * 100).toFixed(2)
+                    : "0.00";
+
+                  const status = nonDispensedCount > 0 ? "Active" : "Inactive";
+
+                  return (
+                    <tr key={nom || 'département'}>
+                      <td className={className}>
+                        <Typography className="text-xs font-semibold text-blue-gray-600">
+                          {nom || 'Sans nom'}
+                        </Typography>
+                      </td>
+                      <td className={className}>
+                        <Typography className="text-xs font-semibold text-blue-gray-600">
+                          {`${totalEnseignants}`}
+                        </Typography>
+                      </td>
+                      <td className={className}>
+                        <Typography className="text-xs font-semibold text-blue-gray-600">
+                          {nonDispensedCount > 0 ? (
+                            <>
+                              <span className="text-green-600">{`${nonDispensedCount}`}</span>
+                              {nonDispensedCount < totalEnseignants && (
+                                <span className="text-xs text-gray-500 ml-1">
+                                  {`sur ${totalEnseignants}`}
+                                </span>
+                              )}
+                            </>
+                          ) : '0'}
+                        </Typography>
+                      </td>
+                      <td className={className}>
+                        <Typography 
+                          className={`text-xs font-semibold ${
+                            parseFloat(departmentRatio) > 50 ? 'text-green-600' : 'text-orange-600'
+                          }`}
+                        >
+                          {`${departmentRatio}%`}
+                        </Typography>
+                      </td>
+                      <td className={className}>
+                        <Typography 
+                          className={`text-xs font-semibold ${
+                            nonDispensedCount > 0 ? 'text-green-600' : 'text-red-600'
+                          }`}
+                        >
+                          {status}
+                        </Typography>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </CardBody>
+        </Card>
       </div>
     </div>
   );
 }
-
-export default Home;

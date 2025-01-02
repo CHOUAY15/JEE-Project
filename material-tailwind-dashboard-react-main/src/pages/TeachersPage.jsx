@@ -8,13 +8,19 @@ import {
 } from '../features/teacher/teacherSlice';
 import { useGetDepartmentsQuery } from '../features/department/departmentSlice';
 import { ArrowLeft } from "lucide-react";
+import {
+  Dialog,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
+  Button,
+} from "@material-tailwind/react";
 
 const TeachersPage = () => {
   const { departmentId } = useParams();
   const navigate = useNavigate();
   const { data: departments = [] } = useGetDepartmentsQuery();
 
-  // Convertir l'ID en nombre pour la comparaison
   const department = departments.find(d => d.id === Number(departmentId));
   console.log({
     departmentId,
@@ -23,6 +29,9 @@ const TeachersPage = () => {
   }); 
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [teacherToDelete, setTeacherToDelete] = useState(null);
+  
   const { data: teachers = [], isLoading } = useGetDepartmentTeachersQuery(departmentId);
   const [createTeacher] = useCreateTeacherMutation();
   const [updateTeacher] = useUpdateTeacherMutation();
@@ -37,37 +46,36 @@ const TeachersPage = () => {
     nbSurveillances: 0
   });
 
- // Modification pour la création d'un enseignant
-const handleSubmit = async (e) => {
-  e.preventDefault();
-    
-  try {
-    const teacherData = {
-      nom: formData.nom,
-      prenom: formData.prenom,
-      email: formData.email,
-      estDispense: formData.estDispense,
-      nbSurveillances: 0
-    };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+      
+    try {
+      const teacherData = {
+        nom: formData.nom,
+        prenom: formData.prenom,
+        email: formData.email,
+        estDispense: formData.estDispense,
+        nbSurveillances: 0
+      };
 
-    if (editingTeacher) {
-      await updateTeacher({ 
-        id: editingTeacher.id,
-        ...teacherData
-      }).unwrap();
-    } else {
-      await createTeacher({
-        departmentId: Number(departmentId),
-        teacher: teacherData
-      }).unwrap();
+      if (editingTeacher) {
+        await updateTeacher({ 
+          id: editingTeacher.id,
+          ...teacherData
+        }).unwrap();
+      } else {
+        await createTeacher({
+          departmentId: Number(departmentId),
+          teacher: teacherData
+        }).unwrap();
+      }
+      setIsModalOpen(false);
+      resetForm();
+    } catch (error) {
+      console.error('Failed to save teacher:', error);
     }
-    setIsModalOpen(false);
-    resetForm();
-  } catch (error) {
-    console.error('Failed to save teacher:', error);
-  }
-};
-  // Si le département n'est pas trouvé, afficher un message d'erreur
+  };
+
   if (!department) {
     return (
       <div className="p-4">
@@ -85,10 +93,17 @@ const handleSubmit = async (e) => {
     );
   }
 
-  const handleDeleteClick = async (id) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer cet enseignant ?')) {
+  const handleDeleteClick = (teacher) => {
+    setTeacherToDelete(teacher);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (teacherToDelete) {
       try {
-        await deleteTeacher(id).unwrap();
+        await deleteTeacher(teacherToDelete.id).unwrap();
+        setDeleteDialogOpen(false);
+        setTeacherToDelete(null);
       } catch (error) {
         console.error('Failed to delete teacher:', error);
       }
@@ -154,7 +169,6 @@ const handleSubmit = async (e) => {
             <th className="p-2 text-left">Prénom</th>
             <th className="p-2 text-left">Email</th>
             <th className="p-2 text-left">Dispensé</th>
-           
             <th className="p-2 text-left">Actions</th>
           </tr>
         </thead>
@@ -165,7 +179,6 @@ const handleSubmit = async (e) => {
               <td className="p-2">{teacher.prenom}</td>
               <td className="p-2">{teacher.email}</td>
               <td className="p-2">{teacher.estDispense ? '✓' : '✗'}</td>
-             
               <td className="p-2">
                 <button
                   onClick={() => handleEditClick(teacher)}
@@ -174,7 +187,7 @@ const handleSubmit = async (e) => {
                   Modifier
                 </button>
                 <button
-                  onClick={() => handleDeleteClick(teacher.id)}
+                  onClick={() => handleDeleteClick(teacher)}
                   className="bg-red-500 text-white py-1 px-2 rounded hover:bg-red-700"
                 >
                   Supprimer
@@ -185,6 +198,42 @@ const handleSubmit = async (e) => {
         </tbody>
       </table>
 
+      {/* Dialog de confirmation de suppression */}
+      <Dialog
+        open={deleteDialogOpen}
+        handler={() => setDeleteDialogOpen(false)}
+        size="sm"
+      >
+        <DialogHeader className="justify-between">
+          <h4 className="text-xl font-bold">Confirmer la suppression</h4>
+        </DialogHeader>
+        <DialogBody divider className="text-center py-8">
+          Êtes-vous sûr de vouloir supprimer l'enseignant{' '}
+          <span className="font-bold">
+            {teacherToDelete?.prenom} {teacherToDelete?.nom}
+          </span>
+          ?
+        </DialogBody>
+        <DialogFooter className="space-x-2">
+          <Button
+            variant="text"
+            color="gray"
+            onClick={() => setDeleteDialogOpen(false)}
+            className="mr-1"
+          >
+            Annuler
+          </Button>
+          <Button
+            variant="gradient"
+            color="red"
+            onClick={handleConfirmDelete}
+          >
+            Confirmer la suppression
+          </Button>
+        </DialogFooter>
+      </Dialog>
+
+      {/* Modal pour l'ajout/modification d'enseignant */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>

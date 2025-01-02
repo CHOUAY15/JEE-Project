@@ -31,22 +31,22 @@ export const statisticsCardsData = [
   {
     color: "gray",
     icon: BuildingOfficeIcon,
-    title: "Nombre total de départements",
+    title: "Départements",
     value: "3,462",
     footer: {
       color: "text-red-500",
       
-      label: "par rapport au mois dernier",
+      label: "Nombre total de départements",
     },
   },
   {
     color: "gray",
     icon: EyeIcon,
-    title: "Surveillance actuelle",
+    title: "Options",
     value: "0",
     footer: {
      
-      label: "Moyenne de surveillance",
+      label: "Nombre total d'Options",
     },
   },
 ];
