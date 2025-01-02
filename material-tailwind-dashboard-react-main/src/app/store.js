@@ -2,6 +2,8 @@ import { configureStore } from '@reduxjs/toolkit';
 import { sessionApi } from '../features/session/sessionApi';
 import { examApi } from '../features/exam/examSlice';
 import examReducer from '../features/exam/examSlice';
+
+
 import surveillanceReducer from '../features/surveillance/surveillanceSlice';
 import { departmentApi } from '../features/department/departmentSlice';
 import { teacherApi } from '../features/teacher/teacherSlice';
@@ -14,6 +16,7 @@ import {surveillanceApi} from '../features/surveillance/surveillanceAPI';
 
 export const store = configureStore({
   reducer: {
+
     exams: examReducer,
     surveillance: surveillanceReducer,
     [departmentApi.reducerPath]: departmentApi.reducer,
