@@ -2,10 +2,12 @@ package ma.projet.grpc.serviceexamen.service.impl;
 
 import jakarta.transaction.Transactional;
 
-import ma.projet.grpc.servicedepartement.entity.Enseignant;
-import ma.projet.grpc.servicedepartement.entity.Local;
 
+
+
+import ma.projet.grpc.serviceexamen.dto.Enseignant;
 import ma.projet.grpc.serviceexamen.dto.ExamenResponse;
+import ma.projet.grpc.serviceexamen.dto.Local;
 import ma.projet.grpc.serviceexamen.entity.Examen;
 import ma.projet.grpc.serviceexamen.entity.Module;
 

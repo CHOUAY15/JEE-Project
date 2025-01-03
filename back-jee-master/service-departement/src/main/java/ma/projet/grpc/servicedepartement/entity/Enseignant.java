@@ -9,6 +9,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 
+import java.util.List;
+
 @Entity
 @Data
 @NoArgsConstructor
@@ -24,6 +26,9 @@ public class Enseignant {
 
     @NotBlank(message = "Le prénom est obligatoire")
     private String prenom;
+
+    @OneToMany(mappedBy = "enseignant", cascade = CascadeType.ALL)
+    private List<Dispense> dispenses;
 
     @Email(message = "Email non valide")
     private String email;

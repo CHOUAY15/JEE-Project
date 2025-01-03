@@ -1,7 +1,8 @@
 package ma.projet.grpc.serviceexamen.optaplanner.score;
 
+import ma.projet.grpc.serviceexamen.dto.Local;
 import ma.projet.grpc.serviceexamen.optaplanner.domain.SurveillanceAssignationPlanning;
-import ma.projet.grpc.servicedepartement.entity.Local;
+
 import ma.projet.grpc.serviceexamen.feignClients.LocalClient;
 import org.optaplanner.core.api.score.buildin.hardsoft.HardSoftScore;
 import org.optaplanner.core.api.score.stream.Constraint;

@@ -5,6 +5,8 @@ import { useGetExamensResQuery, useGetSurveillanceAssignmentsQuery } from '../..
 import { useGetLocauxQuery } from '../../features/local/localSlice';
 import { useGetAllTeachersQuery } from '../../features/teacher/teacherSlice';
 import { Loader2 } from "lucide-react";
+import logoensaj from "../../images/logoensaj.gif";
+
 
 export const SurveillanceModal = () => {
   const dispatch = useDispatch();
@@ -61,7 +63,7 @@ export const SurveillanceModal = () => {
       <div className="relative bg-white rounded-lg w-full max-w-4xl z-[10000]">
         <div className="flex justify-between items-start p-4 border-b">
           <div className="flex items-start gap-4">
-            <img src="/logo-fac.png" alt="Faculté des Sciences" className="h-16" />
+          <img src={logoensaj} alt="ENSAJ" className="h-16" />
             <div>
               <p>date: {selectedPeriod.date}</p>
               <p>Période: {selectedPeriod.period}</p>
@@ -101,7 +103,7 @@ export const SurveillanceModal = () => {
                         const local = locaux.find(l => l.id === localId);
                         return (
                           <div key={localId}>
-                            {local?.nom || `Local ${localId}`}
+                            {local?.nom }
                           </div>
                         );
                       })}
