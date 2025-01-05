@@ -17,6 +17,7 @@ const DepartmentsPage = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState(null);
+  const [uploadStatus, setUploadStatus] = useState({ show: false, success: false, message: '' });
 
   const handleSaveDepartment = async (departmentData) => {
     try {
@@ -32,7 +33,7 @@ const DepartmentsPage = () => {
       }
       setIsModalOpen(false);
       setSelectedDepartment(null);
-      refetch(); // Ensure the list is updated after saving
+      refetch();
     } catch (error) {
       console.error('Failed to save department:', error);
     }
@@ -51,7 +52,7 @@ const DepartmentsPage = () => {
   const handleDelete = async (departmentId) => {
     try {
       await deleteDepartment(departmentId).unwrap();
-      refetch(); // Refresh the list after deletion
+      refetch();
     } catch (error) {
       console.error('Failed to delete department:', error);
     }
@@ -62,10 +63,14 @@ const DepartmentsPage = () => {
     if (file && file.type === 'text/csv') {
       const formData = new FormData();
       formData.append('file', file);
-
       uploadCSV(formData);
     } else {
-      alert('Veuillez sélectionner un fichier CSV valide');
+      setUploadStatus({
+        show: true,
+        success: false,
+        message: 'Veuillez sélectionner un fichier CSV valide'
+      });
+      setTimeout(() => setUploadStatus({ show: false, success: false, message: '' }), 3000);
     }
   };
 
@@ -77,15 +82,29 @@ const DepartmentsPage = () => {
       });
 
       if (response.ok) {
-        alert('Départements importés avec succès');
+        setUploadStatus({
+          show: true,
+          success: true,
+          message: 'Départements importés avec succès'
+        });
         refetch();
       } else {
         const errorData = await response.json();
-        alert('Erreur lors de l\'importation du fichier CSV: ' + errorData.message);
+        setUploadStatus({
+          show: true,
+          success: false,
+          message: 'Erreur lors de l\'importation du fichier CSV: ' + errorData.message
+        });
       }
+      setTimeout(() => setUploadStatus({ show: false, success: false, message: '' }), 3000);
     } catch (error) {
       console.error('Failed to import CSV:', error);
-      alert('Erreur lors de l\'importation du fichier CSV');
+      setUploadStatus({
+        show: true,
+        success: false,
+        message: 'Erreur lors de l\'importation du fichier CSV'
+      });
+      setTimeout(() => setUploadStatus({ show: false, success: false, message: '' }), 3000);
     }
   };
 
@@ -95,6 +114,14 @@ const DepartmentsPage = () => {
 
   return (
     <div className="space-y-6 p-4">
+      {uploadStatus.show && (
+        <div className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg ${
+          uploadStatus.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+        }`}>
+          {uploadStatus.message}
+        </div>
+      )}
+
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Départements ({departments.length})</h1>
         <div className="flex gap-4">
@@ -124,40 +151,38 @@ const DepartmentsPage = () => {
         </div>
       </div>
 
-     {/* Conteneur principal avec ombre et bordure arrondie */}
-<div className="bg-white rounded-lg shadow-md p-4">
-  {/* Liste des départements avec espacement */}
-  <div className="space-y-3">
-    {departments.map((dept) => (
-      <div
-        key={dept.id}
-        className="bg-gray-50 rounded-lg p-4 flex justify-between items-center hover:bg-gray-100 transition-colors duration-200 border border-gray-100"
-      >
-        <span
-          className="text-blue-600 underline cursor-pointer font-medium"
-          onClick={() => handleDepartmentClick(dept)}
-        >
-          {dept.nom}
-        </span>
+      <div className="bg-white rounded-lg shadow-md p-4">
+        <div className="space-y-3">
+          {departments.map((dept) => (
+            <div
+              key={dept.id}
+              className="bg-gray-50 rounded-lg p-4 flex justify-between items-center hover:bg-gray-100 transition-colors duration-200 border border-gray-100"
+            >
+              <span
+                className="text-blue-600 underline cursor-pointer font-medium"
+                onClick={() => handleDepartmentClick(dept)}
+              >
+                {dept.nom}
+              </span>
 
-        <div className="flex gap-2">
-          <button
-            onClick={() => handleEdit(dept)}
-            className="text-blue-600 hover:text-blue-800"
-          >
-            Modifier
-          </button>
-          <button
-            onClick={() => handleDelete(dept.id)}
-            className="px-3 py-1 bg-red-100 text-red-600 rounded hover:bg-red-200"
-          >
-            Supprimer
-          </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleEdit(dept)}
+                  className="text-blue-600 hover:text-blue-800"
+                >
+                  Modifier
+                </button>
+                <button
+                  onClick={() => handleDelete(dept.id)}
+                  className="px-3 py-1 bg-red-100 text-red-600 rounded hover:bg-red-200"
+                >
+                  Supprimer
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
-    ))}
-  </div>
-</div>
 
       <DepartmentManager
         isOpen={isModalOpen}
