@@ -50,7 +50,7 @@ Application web de gestion et planification des surveillances d'examens pour l'�
 git clone https://github.com/CHOUAY15/JEE-Project.git
 
 # Accéder au dossier frontend
-cd frontend
+cd material-tailwind-dashboard-react-main
 
 # Installer les dépendances
 npm install
